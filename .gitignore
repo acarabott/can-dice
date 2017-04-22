@@ -1,3 +1,4 @@
+*.swp
 tensor-flow/flower_data
 cv/imgs
 cv/python/output

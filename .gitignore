@@ -1,3 +1,4 @@
+tensor-flow/flower_data
 cv/imgs
 cv/python/output
 *.DS_Store
@@ -5,7 +6,8 @@ cv/python/output
 .LSOverride
 
 # Icon must end with two \r
-Icon
+Icon
+
 
 # Thumbnails
 ._*

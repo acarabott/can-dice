@@ -2,6 +2,9 @@
 
 import smbus
 import time
+import cap
+
+print("started accelerometer listener")
 
 bus = smbus.SMBus(1)
 address = 0x6b
@@ -84,6 +87,7 @@ while True:
 
   if moving and not now_moving:
     if y > 0:
+      cap.capture()
       print("snap!")
     #print("stopped -------")
 

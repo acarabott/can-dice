@@ -53,6 +53,7 @@ z = pz = getz()
 d = pd = 0
 moving = False
 
+img_count = 0
 while True:
   # store previous values
   px = x
@@ -87,7 +88,8 @@ while True:
 
   if moving and not now_moving:
     if y > 0:
-      cap.capture()
+      cap.capture(img_count)
+      img_count += 1
       print("snap!")
     #print("stopped -------")
 

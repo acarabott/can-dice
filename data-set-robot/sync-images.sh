@@ -16,5 +16,5 @@ fi
 while true; do
 echo "syncing";
 rsync -v -q --remove-source-files --exclude="*.jpg~" pi@pil:~/dev/can-dice/img-cap/output/*.jpg incoming 
-sleep 60;
+sleep 10;
 done

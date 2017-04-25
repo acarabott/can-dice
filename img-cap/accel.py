@@ -73,12 +73,11 @@ while True:
   
   # get total change, filtered  
   d = dx + dy + dz 
-  m = 0.3 # 0.3 for hand
-  m = 0.7 if d > pd else 0.3
+  m = 0.4 # 0.3 for hand
   d = (d * m) + (pd * (1.0 - m))
   
   # decide if moving
-  thresh = 0.1 # 0.05 for hand
+  thresh = 0.05 # 0.05 for hand
 
   now_moving = d > thresh
   # print('{:04.2f}'.format(d), now_moving)

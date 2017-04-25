@@ -69,19 +69,24 @@ while True:
   
   # get total change, filtered  
   d = dx + dy + dz 
-  m = 0.3
+  m = 0.3 # 0.3 for hand
+  m = 0.7 if d > pd else 0.3
   d = (d * m) + (pd * (1.0 - m))
   
   # decide if moving
-  thresh = 0.05
+  thresh = 0.1 # 0.05 for hand
+
   now_moving = d > thresh
-  #print('{:04.2f}'.format(d), now_moving) 
-  if now_moving and not moving:
-    print("started VVVVVVV") 
-  elif moving and not now_moving:
-    print("stopped -------")
+  # print('{:04.2f}'.format(d), now_moving)
+  # if now_moving and not moving:
+  #   print("started VVVVVVV")
+  #   print(d)
+
+  if moving and not now_moving:
+    if y > 0:
+      print("snap!")
+    #print("stopped -------")
 
   moving = now_moving
   time.sleep(0.05)
 
-print("bye")

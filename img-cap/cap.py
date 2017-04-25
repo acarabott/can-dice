@@ -26,12 +26,13 @@ out_name = '{}/{}{}.{}'.format(out_dir, prefix, str(next_num).zfill(4), file_for
 #for f in filelist:
 #  os.remove(f)
 
-
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
-led_pin = 18
-GPIO.setup(led_pin, GPIO.OUT)
-GPIO.output(led_pin, GPIO.HIGH)
+led_pins= [13, 12, 18]
+
+for pin in led_pins:
+  GPIO.setup(pin, GPIO.OUT)
+  GPIO.output(pin, GPIO.HIGH)
 
 subprocess.call([
   'raspistill',
@@ -51,5 +52,7 @@ subprocess.call([
 
 print(out_name)
 
-GPIO.output(18, GPIO.LOW)
+for pin in led_pins:
+  GPIO.output(pin, GPIO.LOW)
+
 GPIO.cleanup()

@@ -11,24 +11,24 @@ import glob
 #for f in filelist:
 #  os.remove(f)
 
-def get_file_name():
+def get_file_name(img_count):
   out_dir = 'output'
   prefix = 'dice-'
 
   file_format = 'jpg'
   imgs = glob.glob('{}/*.{}'.format(out_dir, file_format))
 
-  if len(imgs) == 0:
-    next_num = 0
-  else:
-    nums = [int(splitext(basename(img))[0].replace(prefix, '')) for img in imgs]
-    next_num = 1 + max(nums)
+  # if len(imgs) == 0:
+  #   next_num = 0
+  # else:
+  #   nums = [int(splitext(basename(img))[0].replace(prefix, '')) for img in imgs]
+  #   next_num = 1 + max(nums)
+  next_num = img_count
+  return '{}/{}{}.{}'.format(out_dir, prefix, str(next_num).zfill(5), file_format)
 
-  return '{}/{}{}.{}'.format(out_dir, prefix, str(next_num).zfill(4), file_format)
 
 
-
-def capture():
+def capture(img_count):
   GPIO.setmode(GPIO.BCM)
   GPIO.setwarnings(False)
   led_pins= [13, 12, 18]
@@ -37,7 +37,7 @@ def capture():
     GPIO.setup(pin, GPIO.OUT)
     GPIO.output(pin, GPIO.HIGH)
 
-  out_name = get_file_name()
+  out_name = get_file_name(img_count)
 
   subprocess.call([
     'raspistill',

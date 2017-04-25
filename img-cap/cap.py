@@ -37,6 +37,8 @@ def capture():
     GPIO.setup(pin, GPIO.OUT)
     GPIO.output(pin, GPIO.HIGH)
 
+  out_name = get_file_name()
+
   subprocess.call([
     'raspistill',
     '--nopreview',
@@ -51,7 +53,7 @@ def capture():
     '--shutter', '25000',
     '--contrast', '90',
     '--brightness', '30',
-    '-o', get_file_name()])
+    '-o', out_name])
 
   print(out_name)
 

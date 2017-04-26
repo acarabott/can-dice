@@ -50,6 +50,9 @@ def process_contour(contour, img):
 
   # crop to bounding rect
   cropped = img[rrb_tl[1]:rrb_br[1], rrb_tl[0]:rrb_br[0]]
+  if debug:
+    write_debug_img(cropped, 'cropped')
+
 
   # straighten image
   angle = rect_min_area[2]
@@ -68,6 +71,9 @@ def process_contour(contour, img):
     return
 
   straight = cv2.warpAffine(cropped, matrix, dsize)
+  if debug:
+    write_debug_img(straight, 'straight')
+
 
   # crop based on nonzero values
   nonzero = straight.nonzero()
@@ -76,6 +82,9 @@ def process_contour(contour, img):
   x_start = min(nonzero[1])
   x_end = max(nonzero[1])
   straight_crop = straight[y_start:y_end, x_start:x_end]
+  if debug:
+    write_debug_img(straight_crop, 'straight_crop')
+
 
   # put into square box
   s = straight_crop.shape[0:2]
@@ -87,6 +96,9 @@ def process_contour(contour, img):
 
   square = np.zeros((max_dim, max_dim))
   square[x_start:x_end, y_start:y_end] = straight_crop
+  if debug:
+    write_debug_img(square, 'square')
+
 
   if 0 in square.shape:
     return
@@ -101,6 +113,8 @@ def get_segmented(img, threshold):
   global debug
 
   img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+  if debug:
+    write_debug_img(img_gray, '01-gray')
 
   blurred = cv2.blur(img_gray, (20, 20))
 
@@ -110,7 +124,7 @@ def get_segmented(img, threshold):
   retval, threshold = cv2.threshold(blurred, threshold, 255,
                                     cv2.THRESH_BINARY_INV)
   if debug:
-    write_debug_img(threshold, 'threshold')
+    write_debug_img(threshold, '03-threshold')
 
   min_idx = img.shape.index(min(img.shape[0:2]))
   max_idx = abs(1 - min_idx)
@@ -125,7 +139,7 @@ def get_segmented(img, threshold):
   if debug:
     cimg = np.zeros(resized.shape)
     cv2.drawContours(cimg, contours, -1, 255)
-    write_debug_img(cimg, 'contours')
+    write_debug_img(cimg, '04-contours')
 
   return [process_contour(c, resized) for c in contours]
 

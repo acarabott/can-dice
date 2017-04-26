@@ -92,6 +92,23 @@ def add_text(img, textargs):
   return np.array(pil_img)
 
 
+# returns a new canvas
+def draw_image(canvas, img, xs, xe, ys, ye, border_w, text, color):
+  # border
+  canvas[ys - border_w:ye + border_w, xs - border_w:xe + border_w] = color
+
+  # image
+  canvas[ys:ye, xs:xe] = img
+
+  # text
+  canvas = add_text(canvas, [{'origin': (xs + 25, ye + 50),
+                              'text': text,
+                              'font': font_large,
+                              'fill': color}])
+
+  return canvas
+
+
 cv2.namedWindow('labeller', cv2.WINDOW_OPENGL | cv2.WINDOW_AUTOSIZE)
 running = True
 escape = 27
@@ -109,44 +126,29 @@ while running:
 
   # draw last image from prev batch
   if prev_file is not None:
-    big = get_img(prev_file)
+    dice = get_img(prev_file)
     ys = 300
-    ye = ys + big.shape[1]
+    ye = ys + dice.shape[1]
     xs = 20
-    xe = xs + big.shape[0]
-    img[ys:ye, xs:xe] = big
-    img = add_text(img, [{'origin': (xs + 25, ye + 50),
-                          'text': values[prev_file],
-                          'font': font_large,
-                          'fill': black}])
+    xe = xs + dice.shape[0]
+    img = draw_image(img, dice, xs, xe, ys, ye, 1, values[prev_file], black)
 
   # draw images in current batch
   for i, file in enumerate(get_files()):
-    big = get_img(file)
+    dice = get_img(file)
     x_offset = 20
 
-    xs = x_offset + (i * (big.shape[0] + 20))
-    xe = xs + big.shape[1]
+    xs = x_offset + (i * (dice.shape[0] + 20))
+    xe = xs + dice.shape[1]
     ys = 20
-    ye = ys + big.shape[0]
+    ye = ys + dice.shape[0]
 
     is_current = i == idx % chunk_size
 
-    # border
     border_w = 5 if is_current else 1
     color = blue if is_current else black
-    img[ys - border_w:ye + border_w, xs - border_w:xe + border_w] = color
-
-    # image
-    img[ys:ye, xs:xe] = big
-
-    # text
-    if file in values.keys():
-      color = blue if is_current else black
-      img = add_text(img, [{'origin': (xs + 25, ye + 50),
-                            'text': values[file],
-                            'font': font_large,
-                            'fill': color}])
+    text = values[file] if file in values.keys() else ''
+    img = draw_image(img, dice, xs, xe, ys, ye, border_w, text, color)
 
   # stats
   running_time = time.time() - start

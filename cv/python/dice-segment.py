@@ -2,18 +2,28 @@
 
 import numpy as np
 import cv2
-import os
 import argparse
+import glob
+from os.path import splitext, basename
+
 
 in_path = None
 out_dir = None
 debug = False
+file_ext = 'png'
 
 
 def get_output_path(key):
-  global in_path, out_dir
-  prefix = os.path.splitext(os.path.basename(in_path))[0]
-  return '{}/{}-{}.png'.format(out_dir, prefix, key)
+  global in_path, out_dir, file_ext
+  imgs = glob.glob('{}/*.{}'.format(out_dir, file_ext))
+
+  if len(imgs) == 0:
+    next_num = 0
+  else:
+    nums = [int(splitext(basename(i))[0]) for i in imgs]
+    next_num = 1 + max(nums)
+
+  return '{}/{}.{}'.format(out_dir, str(next_num).zfill(5), file_ext)
 
 
 def write_img(img, key):

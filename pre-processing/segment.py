@@ -68,7 +68,7 @@ def process_contour(contour, img):
   matrix = cv2.getRotationMatrix2D(center, angle, 1.0)
 
   if 0 in cropped.shape:
-    return
+    return None
 
   straight = cv2.warpAffine(cropped, matrix, dsize)
   if debug:
@@ -77,6 +77,9 @@ def process_contour(contour, img):
 
   # crop based on nonzero values
   nonzero = straight.nonzero()
+  if len(nonzero[0]) == 0 or len(nonzero[1]) == 0:
+    return None
+
   y_start = min(nonzero[0])
   y_end = max(nonzero[0])
   x_start = min(nonzero[1])
@@ -147,7 +150,8 @@ def get_segmented(img, threshold):
     cv2.drawContours(cimg, contours, -1, 255)
     write_debug_img(cimg, '04-contours')
 
-  return [process_contour(c, resized) for c in contours]
+  processed = [process_contour(c, resized) for c in contours]
+  return [p for p in processed if p is not None]
 
 
 def process(in_path, out_dir, file_ext, threshold=127):

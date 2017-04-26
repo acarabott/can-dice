@@ -171,7 +171,7 @@ def main():
   parser.add_argument('--ext', help='output file extension', type=str,
                       default='png')
   parser.add_argument('--threshold', help='threshold 0-255', type=int,
-                      default=127)
+                      default=160)
   parser.add_argument('--debug', help='if True then output debug images',
                       type=bool, default=False)
   parser.add_argument('--debug_dir', help='output dir for debug images',

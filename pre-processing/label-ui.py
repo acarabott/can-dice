@@ -6,7 +6,11 @@ import shutil
 import numpy as np
 from os.path import basename
 import time
+from PIL import Image, ImageFont, ImageDraw
 
+# use a truetype font
+font_small = ImageFont.truetype("/Users/ac/Library/Fonts/Lato-Light.ttf", 40)
+font_large = ImageFont.truetype("/Users/ac/Library/Fonts/Lato-Light.ttf", 100)
 
 input_dir = '/Users/ac/rca-dev/17-02-change-a-number/can-dice/data-set/04-processing/'
 todo_dir = input_dir + 'todo'
@@ -78,6 +82,16 @@ def get_img(path):
   return cv2.resize(dice, (150, 150))
 
 
+# returns a new image!
+# textargs is a list of dicts with origin, text, font, fill
+def add_text(img, textargs):
+  pil_img = Image.fromarray(img, 'RGB')
+  draw = ImageDraw.Draw(pil_img)
+  for args in textargs:
+    draw.text(args['origin'], args['text'], font=args['font'], fill=args['fill'])
+  return np.array(pil_img)
+
+
 cv2.namedWindow('labeller', cv2.WINDOW_OPENGL | cv2.WINDOW_AUTOSIZE)
 running = True
 escape = 27
@@ -101,7 +115,10 @@ while running:
     xs = 20
     xe = xs + big.shape[0]
     img[ys:ye, xs:xe] = big
-    cv2.putText(img, values[prev_file], (xs + 25, ye + 150), 0, 5, white)
+    img = add_text(img, [{'origin': (xs + 25, ye + 50),
+                          'text': values[prev_file],
+                          'font': font_large,
+                          'fill': black}])
 
   # draw images in current batch
   for i, file in enumerate(get_files()):
@@ -126,17 +143,35 @@ while running:
     # text
     if file in values.keys():
       color = blue if is_current else black
-      cv2.putText(img, values[file], (xs + 25, ye + 150), 0, 5, color)
+      img = add_text(img, [{'origin': (xs + 25, ye + 50),
+                            'text': values[file],
+                            'font': font_large,
+                            'fill': color}])
 
   # stats
   running_time = time.time() - start
   mins = running_time / 60.0
   per_min = idx / mins
 
-  text_x = int(img.shape[1] / 2)
-  cv2.putText(img, 'count: {}'.format(idx), (text_x, 450), 0, 2, blue)
-  cv2.putText(img, 'time: {:.1f}'.format(running_time), (text_x, 520), 0, 2, black)
-  cv2.putText(img, '{:.1f} / min'.format(per_min), (text_x, 590), 0, 2, black)
+  pil_img = Image.fromarray(img, 'RGB')
+  draw = ImageDraw.Draw(pil_img)
+
+  text_x = int(img.shape[1] * 0.75)
+  text_y = int(img.shape[0] * 0.75)
+  stats = [{'origin': (text_x, text_y + 0),
+            'text': 'count: {}'.format(idx),
+            'fill': blue,
+            'font': font_small},
+           {'origin': (text_x, text_y + 50),
+            'text': 'time: {:.1f}'.format(running_time),
+            'fill': black,
+            'font': font_small},
+           {'origin': (text_x, text_y + 100),
+            'text': '{:.1f} / min'.format(per_min),
+            'fill': black,
+            'font': font_small}]
+
+  img = add_text(img, stats)
 
   # render
   cv2.imshow('labeller', img)

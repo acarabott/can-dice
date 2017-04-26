@@ -24,7 +24,6 @@ def get_output_path(out_dir, file_ext):
 
 def write_img(img, path):
   cv2.imwrite(path, img)
-  print('wrote to {}'.format(path))
 
 
 def write_segment_img(img, out_dir, file_ext):

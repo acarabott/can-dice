@@ -9,10 +9,11 @@ import glob
 import cv2
 import shutil
 import numpy as np
+from os.path import basename
 
 input_dir = '/Users/ac/rca-dev/17-02-change-a-number/can-dice/data-set/04-processing/'
 todo_dir = input_dir + 'todo'
-trash_dir = input_dir + 'done'
+skip_dir = input_dir + 'skip'
 output_dir = '/Users/ac/rca-dev/17-02-change-a-number/can-dice/data-set/05-labelled/'
 
 files = glob.glob('{}/*.jpg'.format(todo_dir))
@@ -49,9 +50,9 @@ def get_prev_file():
 def move(dst, value):
   global idx
   file = files[idx]
-  # shutil.move(file, dst)
+  shutil.move(file, dst)
   values[files[idx]] = value
-  processed[file] = dst
+  processed[file] = '{}/{}'.format(dst, basename(file))
   idx += 1
 
 
@@ -59,20 +60,23 @@ def label(label):
   move(output_dir + label, label)
 
 
-def done():
-  move(trash_dir, '-')
+def skip():
+  move(skip_dir, '-')
 
 
 def undo():
   global idx
-  idx = max(idx -1, 0)
+  if idx == 0:
+    return
+  idx = max(idx - 1, 0)
   file = files[idx]
-  # shutil.move(processed[file], todo_dir)
-  # del processed[file]
+  shutil.move(processed[file], todo_dir)
+  del processed[file]
 
 
 def get_img(path):
-  dice = cv2.imread(path)
+  real_path = processed[path] if path in processed.keys() else path
+  dice = cv2.imread(real_path)
   return cv2.resize(dice, (200, 200))
 
 
@@ -139,7 +143,7 @@ while running:
   if key == ord('9'):
     label('9')
   if key == ord(' '):
-    done()
+    skip()
   if key == ord('b') or key == 8:
     undo()
 

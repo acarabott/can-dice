@@ -23,11 +23,27 @@ processed = dict()
 chunk_size = 5
 idx = 0
 
+blue = (212, 156, 43)
+white = (255, 255, 255)
+
+
+def get_chunk_idx():
+  global idx, chunk_size
+  return idx - (idx % chunk_size)
+
 
 def get_files():
-  global idx
-  c_idx = idx - (idx % chunk_size)
+  global chunk_size
+  c_idx = get_chunk_idx()
   return files[c_idx:c_idx + chunk_size]
+
+
+def get_prev_file():
+  global idx
+  if idx % chunk_size == 0 and idx != 0:
+    return files[idx - 1]
+
+  return None
 
 
 def move(dst, value):
@@ -55,8 +71,12 @@ def undo():
   # del processed[file]
 
 
-cv2.namedWindow('labeller', cv2.WINDOW_OPENGL | cv2.WINDOW_AUTOSIZE)
+def get_img(path):
+  dice = cv2.imread(path)
+  return cv2.resize(dice, (200, 200))
 
+
+cv2.namedWindow('labeller', cv2.WINDOW_OPENGL | cv2.WINDOW_AUTOSIZE)
 running = True
 escape = 27
 while running:
@@ -64,17 +84,28 @@ while running:
 
   img = np.zeros((700, 1500, 3), np.uint8)
 
-  for i, file in enumerate(get_files()):
-    dice = cv2.imread(file)
-    big = cv2.resize(dice, (200, 200))
+  prev_file = get_prev_file()
+  cur_files = get_files()
 
-    xs = 20 + (i * (big.shape[0] + 20))
+  if prev_file is not None:
+    big = get_img(prev_file)
+    ys = 20
+    ye = ys + big.shape[1]
+    xs = 20
+    xe = xs + big.shape[0]
+    img[ys:ye, xs:xe] = big
+    cv2.putText(img, values[prev_file], (xs + 25, ye + 150), 0, 5, white)
+
+  for i, file in enumerate(get_files()):
+    big = get_img(file)
+    x_offset = 280 + 20
+
+    xs = x_offset + (i * (big.shape[0] + 20))
     xe = xs + big.shape[1]
     ys = 20
     ye = ys + big.shape[0]
 
     is_current = i == idx % chunk_size
-    blue = (212, 156, 43)
 
     if is_current:
       img[ys - 10:ye + 10, xs - 10:xe + 10] = blue
@@ -82,7 +113,7 @@ while running:
     img[ys:ye, xs:xe] = big
 
     if file in values.keys():
-      color = blue if is_current else (255, 255, 255)
+      color = blue if is_current else white
       cv2.putText(img, values[file], (xs + 25, ye + 150), 0, 5, color)
 
   cv2.imshow('labeller', img)
@@ -109,27 +140,9 @@ while running:
     label('9')
   if key == ord(' '):
     done()
-  if key == ord('b'):
+  if key == ord('b') or key == 8:
     undo()
 
   running = key != escape
 
 cv2.destroyAllWindows()
-# for f in filelist:
-#  os.remove(f)
-
-# filelist = glob.glob('{}/*.{}'.format(out_dir, file_format))
-# for f in filelist:
-#  os.remove(f)
-
-# filelist = glob.glob('{}/*.{}'.format(out_dir, file_format))
-# for f in filelist:
-#  os.remove(f)
-
-# imgs = glob.glob('{}/*.{}'.format(out_dir, ext))
-
-# if len(imgs) == 0:
-#   next_num = 0
-# else:
-#   nums = [int(splitext(basename(img))[0].replace(prefix, '')) for img in imgs]
-#   next_num = 1 + max(nums)

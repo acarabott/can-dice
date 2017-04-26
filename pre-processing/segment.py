@@ -145,7 +145,7 @@ def main():
   parser.add_argument('in_path', help='path to input image', type=str)
   parser.add_argument('out_dir', help='directory to output results', type=str)
   parser.add_argument('--ext', help='output file extension', type=str,
-                      default='jpg')
+                      default='png')
   parser.add_argument('--threshold', help='threshold 0-255', type=int,
                       default=127)
   parser.add_argument('--debug', help='if True then output debug images',

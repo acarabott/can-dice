@@ -116,7 +116,13 @@ def get_segmented(img, threshold):
   if debug:
     write_debug_img(img_gray, '01-gray')
 
-  blurred = cv2.blur(img_gray, (20, 20))
+  blur_size = (img_gray.shape[0] * 0.012, img_gray.shape[1] * 0.012)
+  coeff = 0.012
+  blur_size = tuple([max(1, d * coeff) for d in img_gray.shape[0:2]])
+  blurred = cv2.blur(img_gray, blur_size)
+  if debug:
+    write_debug_img(blurred, '02-blurred')
+
 
   # white dice on black
 #     retval, threshold = cv2.threshold(blurred, 150, 255, cv2.THRESH_BINARY)

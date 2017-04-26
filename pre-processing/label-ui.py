@@ -76,10 +76,10 @@ def undo():
   del processed[file]
 
 
-def get_img(path):
+def get_img(path, shape):
   real_path = processed[path] if path in processed.keys() else path
   dice = cv2.imread(real_path)
-  return cv2.resize(dice, (150, 150))
+  return cv2.resize(dice, shape)
 
 
 # returns a new image!
@@ -95,13 +95,16 @@ def add_text(img, textargs):
 # returns a new canvas
 def draw_image(canvas, img, xs, xe, ys, ye, border_w, text, color):
   # border
-  canvas[ys - border_w:ye + border_w, xs - border_w:xe + border_w] = color
+  yslice = slice(max(0, ys - border_w), min(ye + border_w, canvas.shape[0]))
+  xslice = slice(max(0, xs - border_w), min(xe + border_w, canvas.shape[1]))
+  print(yslice, xslice)
+  canvas[yslice, xslice] = color
 
   # image
   canvas[ys:ye, xs:xe] = img
 
   # text
-  canvas = add_text(canvas, [{'origin': (xs + 25, ye + 50),
+  canvas = add_text(canvas, [{'origin': (xs + 25, ye + 25),
                               'text': text,
                               'font': font_large,
                               'fill': color}])
@@ -118,29 +121,36 @@ start = time.time()
 while running:
   key = cv2.waitKey(60) & 0xFF
 
-  img = np.zeros((700, 1050, 3), np.uint8)
+  width = 800
+  # height = int(width * (9 / 16))
+  height = 500
+  img = np.zeros((height, width, 3), np.uint8)
   img[0:img.shape[0], 0:img.shape[1]] = white
 
   prev_file = get_prev_file()
   cur_files = get_files()
 
+  margin = int(width * 0.04)
+  dice_shape = int(img.shape[1] / (chunk_size + 2))
+  dice_shape = (dice_shape, dice_shape)
+
   # draw last image from prev batch
   if prev_file is not None:
-    dice = get_img(prev_file)
-    ys = 300
+    dice = get_img(prev_file, dice_shape)
+    ys = int(img.shape[1] * 0.3)
     ye = ys + dice.shape[1]
-    xs = 20
+    xs = int(margin / 2)
     xe = xs + dice.shape[0]
     img = draw_image(img, dice, xs, xe, ys, ye, 1, values[prev_file], black)
 
   # draw images in current batch
   for i, file in enumerate(get_files()):
-    dice = get_img(file)
-    x_offset = 20
+    dice = get_img(file, dice_shape)
 
-    xs = x_offset + (i * (dice.shape[0] + 20))
+    print(margin)
+    xs = int(margin / 2) + int(i * (dice.shape[1] + margin))
     xe = xs + dice.shape[1]
-    ys = 20
+    ys = margin
     ye = ys + dice.shape[0]
 
     is_current = i == idx % chunk_size
@@ -159,7 +169,7 @@ while running:
   draw = ImageDraw.Draw(pil_img)
 
   text_x = int(img.shape[1] * 0.75)
-  text_y = int(img.shape[0] * 0.75)
+  text_y = int(img.shape[0] * 0.6)
   stats = [{'origin': (text_x, text_y + 0),
             'text': 'count: {}'.format(idx),
             'fill': blue,

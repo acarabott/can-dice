@@ -6,15 +6,11 @@ import argparse
 import glob
 from os.path import splitext, basename
 
-
-in_path = None
-out_dir = None
 debug = False
-file_ext = 'png'
+debug_dir = '.'
 
 
-def get_output_path(key):
-  global in_path, out_dir, file_ext
+def get_output_path(out_dir, file_ext):
   imgs = glob.glob('{}/*.{}'.format(out_dir, file_ext))
 
   if len(imgs) == 0:
@@ -26,10 +22,20 @@ def get_output_path(key):
   return '{}/{}.{}'.format(out_dir, str(next_num).zfill(5), file_ext)
 
 
-def write_img(img, key):
-  path = get_output_path(key)
+def write_img(img, path):
   cv2.imwrite(path, img)
   print('wrote to {}'.format(path))
+
+
+def write_segment_img(img, out_dir, file_ext):
+  path = get_output_path(out_dir, file_ext)
+  write_img(img, path)
+
+
+def write_debug_img(img, key):
+  global debug_dir
+  path = '{}/{}.png'.format(debug_dir, key)
+  write_img(img, path)
 
 
 def process_contour(contour, img):
@@ -104,7 +110,7 @@ def get_segmented(img, threshold):
   retval, threshold = cv2.threshold(blurred, threshold, 255,
                                     cv2.THRESH_BINARY_INV)
   if debug:
-    write_img(threshold, 'threshold')
+    write_debug_img(threshold, 'threshold')
 
   min_idx = img.shape.index(min(img.shape[0:2]))
   max_idx = abs(1 - min_idx)
@@ -119,34 +125,40 @@ def get_segmented(img, threshold):
   if debug:
     cimg = np.zeros(resized.shape)
     cv2.drawContours(cimg, contours, -1, 255)
-    write_img(cimg, 'contours')
+    write_debug_img(cimg, 'contours')
 
   return [process_contour(c, resized) for c in contours]
+
+
+def process(in_path, out_dir, file_ext, threshold=127):
+  img = cv2.imread(in_path)
+  if img is None:
+    print("couldn't read image")
+    return
+
+  for i, segment in enumerate(get_segmented(img, threshold)):
+    write_segment_img(segment, out_dir, file_ext)
 
 
 def main():
   parser = argparse.ArgumentParser()
   parser.add_argument('in_path', help='path to input image', type=str)
   parser.add_argument('out_dir', help='directory to output results', type=str)
+  parser.add_argument('--ext', help='output file extension', type=str,
+                      default='jpg')
   parser.add_argument('--threshold', help='threshold 0-255', type=int,
                       default=127)
   parser.add_argument('--debug', help='if True then output debug images',
                       type=bool, default=False)
+  parser.add_argument('--debug_dir', help='output dir for debug images',
+                      type=str, default='.')
   args = parser.parse_args()
 
-  img = cv2.imread(args.in_path)
-  if img is None:
-    print("couldn't read image")
-    return
-
-  global in_path, out_dir, debug
-  in_path = args.in_path
-  out_dir = args.out_dir
+  global debug, debug_dir
   debug = args.debug
+  debug_dir = args.debug_dir
 
-  for i, segment in enumerate(get_segmented(img, args.threshold)):
-    key = str(i).zfill(2)
-    write_img(segment, key)
+  process(args.in_path, args.out_dir, args.ext, args.threshold)
 
 
 if __name__ == '__main__':

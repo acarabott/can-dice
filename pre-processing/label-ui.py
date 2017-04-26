@@ -7,6 +7,7 @@ import numpy as np
 from os.path import basename
 import time
 
+
 input_dir = '/Users/ac/rca-dev/17-02-change-a-number/can-dice/data-set/04-processing/'
 todo_dir = input_dir + 'todo'
 skip_dir = input_dir + 'skip'
@@ -22,6 +23,7 @@ idx = 0
 
 blue = (212, 156, 43)
 white = (255, 255, 255)
+black = (0, 0, 0)
 
 
 def get_chunk_idx():
@@ -73,7 +75,7 @@ def undo():
 def get_img(path):
   real_path = processed[path] if path in processed.keys() else path
   dice = cv2.imread(real_path)
-  return cv2.resize(dice, (200, 200))
+  return cv2.resize(dice, (150, 150))
 
 
 cv2.namedWindow('labeller', cv2.WINDOW_OPENGL | cv2.WINDOW_AUTOSIZE)
@@ -85,11 +87,13 @@ start = time.time()
 while running:
   key = cv2.waitKey(60) & 0xFF
 
-  img = np.zeros((700, 1700, 3), np.uint8)
+  img = np.zeros((700, 1050, 3), np.uint8)
+  img[0:img.shape[0], 0:img.shape[1]] = white
 
   prev_file = get_prev_file()
   cur_files = get_files()
 
+  # draw last image from prev batch
   if prev_file is not None:
     big = get_img(prev_file)
     ys = 300
@@ -99,6 +103,7 @@ while running:
     img[ys:ye, xs:xe] = big
     cv2.putText(img, values[prev_file], (xs + 25, ye + 150), 0, 5, white)
 
+  # draw images in current batch
   for i, file in enumerate(get_files()):
     big = get_img(file)
     x_offset = 20
@@ -110,25 +115,33 @@ while running:
 
     is_current = i == idx % chunk_size
 
-    if is_current:
-      img[ys - 10:ye + 10, xs - 10:xe + 10] = blue
+    # border
+    border_w = 5 if is_current else 1
+    color = blue if is_current else black
+    img[ys - border_w:ye + border_w, xs - border_w:xe + border_w] = color
 
+    # image
     img[ys:ye, xs:xe] = big
 
+    # text
     if file in values.keys():
-      color = blue if is_current else white
+      color = blue if is_current else black
       cv2.putText(img, values[file], (xs + 25, ye + 150), 0, 5, color)
 
+  # stats
   running_time = time.time() - start
   mins = running_time / 60.0
   per_min = idx / mins
 
-  cv2.putText(img, 'count: {}'.format(idx), (850, 450), 0, 2, blue)
-  cv2.putText(img, 'time: {:.1f}'.format(running_time), (850, 520), 0, 2, white)
-  cv2.putText(img, '{:.1f} / min'.format(per_min), (850, 590), 0, 2, white)
+  text_x = int(img.shape[1] / 2)
+  cv2.putText(img, 'count: {}'.format(idx), (text_x, 450), 0, 2, blue)
+  cv2.putText(img, 'time: {:.1f}'.format(running_time), (text_x, 520), 0, 2, black)
+  cv2.putText(img, '{:.1f} / min'.format(per_min), (text_x, 590), 0, 2, black)
 
+  # render
   cv2.imshow('labeller', img)
 
+  # input handling
   if key == ord('0'):
     label('0')
   if key == ord('1'):

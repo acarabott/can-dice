@@ -1,15 +1,11 @@
 #!/usr/bin/env python3
 
-# - show prev image, cur image and 5 after
-# - on number input move image to target directory
-# - on 'b' undo the previous move
-# - on space skip image
-
 import glob
 import cv2
 import shutil
 import numpy as np
 from os.path import basename
+import time
 
 input_dir = '/Users/ac/rca-dev/17-02-change-a-number/can-dice/data-set/04-processing/'
 todo_dir = input_dir + 'todo'
@@ -21,7 +17,7 @@ files = glob.glob('{}/*.jpg'.format(todo_dir))
 values = dict()
 processed = dict()
 
-chunk_size = 5
+chunk_size = 6
 idx = 0
 
 blue = (212, 156, 43)
@@ -83,17 +79,20 @@ def get_img(path):
 cv2.namedWindow('labeller', cv2.WINDOW_OPENGL | cv2.WINDOW_AUTOSIZE)
 running = True
 escape = 27
+
+start = time.time()
+
 while running:
   key = cv2.waitKey(60) & 0xFF
 
-  img = np.zeros((700, 1500, 3), np.uint8)
+  img = np.zeros((700, 1700, 3), np.uint8)
 
   prev_file = get_prev_file()
   cur_files = get_files()
 
   if prev_file is not None:
     big = get_img(prev_file)
-    ys = 20
+    ys = 300
     ye = ys + big.shape[1]
     xs = 20
     xe = xs + big.shape[0]
@@ -102,7 +101,7 @@ while running:
 
   for i, file in enumerate(get_files()):
     big = get_img(file)
-    x_offset = 280 + 20
+    x_offset = 20
 
     xs = x_offset + (i * (big.shape[0] + 20))
     xe = xs + big.shape[1]
@@ -119,6 +118,14 @@ while running:
     if file in values.keys():
       color = blue if is_current else white
       cv2.putText(img, values[file], (xs + 25, ye + 150), 0, 5, color)
+
+  running_time = time.time() - start
+  mins = running_time / 60.0
+  per_min = idx / mins
+
+  cv2.putText(img, 'count: {}'.format(idx), (850, 450), 0, 2, blue)
+  cv2.putText(img, 'time: {:.1f}'.format(running_time), (850, 520), 0, 2, white)
+  cv2.putText(img, '{:.1f} / min'.format(per_min), (850, 590), 0, 2, white)
 
   cv2.imshow('labeller', img)
 

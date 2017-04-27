@@ -9,7 +9,7 @@ import time
 from PIL import Image, ImageFont, ImageDraw
 
 # use a truetype font
-font_small = ImageFont.truetype("/Users/ac/Library/Fonts/Lato-Light.ttf", 40)
+font_small = ImageFont.truetype("/Users/ac/Library/Fonts/Lato-Light.ttf", 35)
 font_large = ImageFont.truetype("/Users/ac/Library/Fonts/Lato-Light.ttf", 100)
 
 input_dir = '/Users/ac/rca-dev/17-02-change-a-number/can-dice/data-set/04-processing/'
@@ -104,9 +104,9 @@ def draw_image(canvas, img, xs, xe, ys, ye, border_w, text, color):
   canvas[ys:ye, xs:xe] = img
 
   # text
-  canvas = add_text(canvas, [{'origin': (xs + 25, ye + 25),
+  canvas = add_text(canvas, [{'origin': (xs + 35, ye + 5),
                               'text': text,
-                              'font': font_large,
+                              'font': font_small,
                               'fill': color}])
 
   return canvas
@@ -122,10 +122,9 @@ def draw_files(img, files, dice_shape):
       ys = margin
       ye = ys + dice_shape[0]
     else:
-      # xe = (img.shape[1] - int(margin / 2)) - int((i % line_size) * dice_shape[1] + margin)
       xe = img.shape[1] - int(margin * 0.75) - int((i % line_size) * (dice.shape[1] + margin))
       xs = xe - dice_shape[1]
-      ys = margin + dice_shape[0] + margin
+      ys = margin + dice_shape[0] + margin * 2
       ye = ys + dice_shape[0]
 
     global idx
@@ -181,17 +180,19 @@ while running:
   pil_img = Image.fromarray(img, 'RGB')
   draw = ImageDraw.Draw(pil_img)
 
-  text_x = int(img.shape[1] * 0.75)
-  text_y = int(img.shape[0] * 0.6)
-  stats = [{'origin': (text_x, text_y + 0),
+  def get_x(c):
+    return int(img.shape[1] * c)
+
+  text_y = int(img.shape[0] * 0.9)
+  stats = [{'origin': (get_x(0.15), text_y),
             'text': 'count: {}'.format(idx),
             'fill': blue,
             'font': font_small},
-           {'origin': (text_x, text_y + 50),
+           {'origin': (get_x(0.4), text_y),
             'text': 'time: {:.1f}'.format(running_time),
             'fill': black,
             'font': font_small},
-           {'origin': (text_x, text_y + 100),
+           {'origin': (get_x(0.75), text_y),
             'text': '{:.1f} / min'.format(per_min),
             'fill': black,
             'font': font_small}]

@@ -111,6 +111,29 @@ def draw_image(canvas, img, xs, xe, ys, ye, border_w, text, color):
   return canvas
 
 
+def draw_files(img, files, dice_shape, y_start, reverse=False):
+  to_draw = files[::-1] if reverse else files
+
+  for i, file in enumerate(to_draw):
+    dice = get_img(file, dice_shape)
+
+    xs = int(margin / 2) + int(i * (dice.shape[1] + margin))
+    xe = xs + dice.shape[1]
+    ys = y_start
+    ye = ys + dice.shape[0]
+
+    global idx
+    j = chunk_size - i if reverse else i
+    is_current = j == idx % chunk_size
+
+    border_w = 5 if is_current else 1
+    color = blue if is_current else black
+    text = values[file] if file in values.keys() else ''
+    img = draw_image(img, dice, xs, xe, ys, ye, border_w, text, color)
+
+  return img
+
+
 cv2.namedWindow('labeller', cv2.WINDOW_OPENGL | cv2.WINDOW_AUTOSIZE)
 running = True
 escape = 27
@@ -143,21 +166,8 @@ while running:
     img = draw_image(img, dice, xs, xe, ys, ye, 1, values[prev_file], black)
 
   # draw images in current batch
-  for i, file in enumerate(get_files()):
-    dice = get_img(file, dice_shape)
+  img = draw_files(img, get_files(), dice_shape, margin, False)
 
-    print(margin)
-    xs = int(margin / 2) + int(i * (dice.shape[1] + margin))
-    xe = xs + dice.shape[1]
-    ys = margin
-    ye = ys + dice.shape[0]
-
-    is_current = i == idx % chunk_size
-
-    border_w = 5 if is_current else 1
-    color = blue if is_current else black
-    text = values[file] if file in values.keys() else ''
-    img = draw_image(img, dice, xs, xe, ys, ye, border_w, text, color)
 
   # stats
   running_time = time.time() - start

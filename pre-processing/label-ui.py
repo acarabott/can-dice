@@ -188,30 +188,31 @@ while running:
   cv2.imshow('labeller', img)
 
   # input handling
-  if key == ord('0'):
-    label('0')
-  if key == ord('1'):
+  if key == ord('1') or key == ord('q'):
     label('1')
   if key == ord('2'):
     label('2')
   if key == ord('3'):
     label('3')
-  if key == ord('4'):
+  if key == ord('4') or key == ord('r'):
     label('4')
-  if key == ord('5') or key == ord('f'):
+  if key == ord('5') or key == ord('v'):
     label('5')
-  if key == ord('6') or key == ord('h'):
+  if key == ord('6') or key == ord('b'):
     label('6')
-  if key == ord('7'):
+  if key == ord('7') or key == ord('u'):
     label('7')
   if key == ord('8'):
     label('8')
   if key == ord('9'):
     label('9')
+  if key == ord('0') or key == ord('p'):
+    label('0')
   if key == ord(' '):
-    skip()
-  if key == ord('b') or key == 8:
     undo()
+  if key == 8:
+    skip()
+
 
   running = key != escape
 

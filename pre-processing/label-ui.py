@@ -22,7 +22,8 @@ files = glob.glob('{}/*.jpg'.format(todo_dir))
 values = dict()
 processed = dict()
 
-chunk_size = 6
+chunk_size = 12
+line_size = int(chunk_size / 2)
 idx = 0
 
 blue = (212, 156, 43)
@@ -111,20 +112,24 @@ def draw_image(canvas, img, xs, xe, ys, ye, border_w, text, color):
   return canvas
 
 
-def draw_files(img, files, dice_shape, y_start, reverse=False):
-  to_draw = files[::-1] if reverse else files
-
-  for i, file in enumerate(to_draw):
+def draw_files(img, files, dice_shape):
+  for i, file in enumerate(files):
     dice = get_img(file, dice_shape)
 
-    xs = int(margin / 2) + int(i * (dice.shape[1] + margin))
-    xe = xs + dice.shape[1]
-    ys = y_start
-    ye = ys + dice.shape[0]
+    if i % chunk_size < line_size:
+      xs = int(margin / 2) + int(i * (dice_shape[1] + margin))
+      xe = xs + dice_shape[1]
+      ys = margin
+      ye = ys + dice_shape[0]
+    else:
+      # xe = (img.shape[1] - int(margin / 2)) - int((i % line_size) * dice_shape[1] + margin)
+      xe = img.shape[1] - int(margin * 0.75) - int((i % line_size) * (dice.shape[1] + margin))
+      xs = xe - dice_shape[1]
+      ys = margin + dice_shape[0] + margin
+      ye = ys + dice_shape[0]
 
     global idx
-    j = chunk_size - i if reverse else i
-    is_current = j == idx % chunk_size
+    is_current = i == idx % chunk_size
 
     border_w = 5 if is_current else 1
     color = blue if is_current else black
@@ -153,7 +158,7 @@ while running:
   cur_files = get_files()
 
   margin = int(width * 0.04)
-  dice_shape = int(img.shape[1] / (chunk_size + 2))
+  dice_shape = int(img.shape[1] / (line_size + 2))
   dice_shape = (dice_shape, dice_shape)
 
   # draw last image from prev batch
@@ -166,8 +171,7 @@ while running:
     img = draw_image(img, dice, xs, xe, ys, ye, 1, values[prev_file], black)
 
   # draw images in current batch
-  img = draw_files(img, get_files(), dice_shape, margin, False)
-
+  img = draw_files(img, get_files(), dice_shape)
 
   # stats
   running_time = time.time() - start

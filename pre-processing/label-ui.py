@@ -37,17 +37,25 @@ def get_chunk_idx():
 
 
 def get_files():
-  global chunk_size
+  global idx, chunk_size
   c_idx = get_chunk_idx()
-  return files[c_idx:c_idx + chunk_size]
+
+  if idx % chunk_size < line_size:
+    return files[c_idx:c_idx + chunk_size]
+  else:
+    bottom_start = c_idx + line_size
+    bottom_end = bottom_start + line_size
+    bottom_row = files[bottom_start:bottom_end]
+    top_row = files[bottom_end:bottom_end + line_size]
+    return top_row + bottom_row
+
+  return None
 
 
 def get_prev_file():
   global idx
-  if idx % chunk_size == 0 and idx != 0:
+  if idx % line_size == 0 and idx != 0:
     return files[idx - 1]
-
-  return None
 
 
 def move(dst, value):
@@ -149,28 +157,28 @@ while running:
 
   width = 800
   # height = int(width * (9 / 16))
-  height = 500
+  height = 600
   img = np.zeros((height, width, 3), np.uint8)
   img[0:img.shape[0], 0:img.shape[1]] = white
 
-  prev_file = get_prev_file()
   cur_files = get_files()
 
   margin = int(width * 0.04)
   dice_shape = int(img.shape[1] / (line_size + 2))
   dice_shape = (dice_shape, dice_shape)
 
-  # draw last image from prev batch
-  if prev_file is not None:
-    dice = get_img(prev_file, dice_shape)
-    ys = int(img.shape[1] * 0.3)
-    ye = ys + dice.shape[1]
-    xs = int(margin / 2)
-    xe = xs + dice.shape[0]
-    img = draw_image(img, dice, xs, xe, ys, ye, 1, values[prev_file], black)
-
   # draw images in current batch
   img = draw_files(img, get_files(), dice_shape)
+
+  file = get_prev_file()
+  if file is not None:
+    xs = int(img.shape[1] / 2) - int(dice_shape[1] / 2)
+    xe = xs + dice_shape[1]
+    ys = int(img.shape[0] * 0.6)
+    ye = ys + dice_shape[0]
+    dice = get_img(file, dice_shape)
+    text = values[file] if file in values.keys() else ''
+    img = draw_image(img, dice, xs, xe, ys, ye, 1, text, black)
 
   # stats
   running_time = time.time() - start

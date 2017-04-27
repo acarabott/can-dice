@@ -97,7 +97,6 @@ def draw_image(canvas, img, xs, xe, ys, ye, border_w, text, color):
   # border
   yslice = slice(max(0, ys - border_w), min(ye + border_w, canvas.shape[0]))
   xslice = slice(max(0, xs - border_w), min(xe + border_w, canvas.shape[1]))
-  print(yslice, xslice)
   canvas[yslice, xslice] = color
 
   # image

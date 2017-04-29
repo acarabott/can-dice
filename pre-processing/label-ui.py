@@ -9,8 +9,8 @@ import time
 from PIL import Image, ImageFont, ImageDraw
 
 # use a truetype font
-font_small = ImageFont.truetype("/Users/ac/Library/Fonts/Lato-Light.ttf", 35)
-font_large = ImageFont.truetype("/Users/ac/Library/Fonts/Lato-Light.ttf", 100)
+font_label = ImageFont.truetype("/Users/ac/Library/Fonts/Lato-Light.ttf", 35)
+font_stats = ImageFont.truetype("/Users/ac/Library/Fonts/Lato-Light.ttf", 25)
 
 input_dir = '/Users/ac/rca-dev/17-02-change-a-number/can-dice/data-set/04-processing/'
 todo_dir = input_dir + 'todo'
@@ -29,6 +29,12 @@ idx = 0
 blue = (212, 156, 43)
 white = (255, 255, 255)
 black = (0, 0, 0)
+
+start = time.time()
+timer_start = time.time()
+timer_dur = 60.0
+hist = []
+peak = 0
 
 
 def get_chunk_idx():
@@ -59,12 +65,15 @@ def get_prev_file():
 
 
 def move(dst, value):
-  global idx
+  global idx, hist, peak
   file = files[idx]
   shutil.move(file, dst)
   values[files[idx]] = value
   processed[file] = '{}/{}'.format(dst, basename(file))
   idx += 1
+  hist.append(time.time())
+  hist = [t for t in hist if t >= time.time() - timer_dur]
+  peak = max(peak, len(hist))
 
 
 def label(label):
@@ -114,7 +123,7 @@ def draw_image(canvas, img, xs, xe, ys, ye, border_w, text, color):
   # text
   canvas = add_text(canvas, [{'origin': (xs + 35, ye + 5),
                               'text': text,
-                              'font': font_small,
+                              'font': font_label,
                               'fill': color}])
 
   return canvas
@@ -150,8 +159,6 @@ cv2.namedWindow('labeller', cv2.WINDOW_OPENGL | cv2.WINDOW_AUTOSIZE)
 running = True
 escape = 27
 
-start = time.time()
-
 while running:
   key = cv2.waitKey(60) & 0xFF
 
@@ -183,7 +190,7 @@ while running:
   # stats
   running_time = time.time() - start
   mins = running_time / 60.0
-  per_min = idx / mins
+  avg = idx / mins
 
   pil_img = Image.fromarray(img, 'RGB')
   draw = ImageDraw.Draw(pil_img)
@@ -192,18 +199,22 @@ while running:
     return int(img.shape[1] * c)
 
   text_y = int(img.shape[0] * 0.9)
-  stats = [{'origin': (get_x(0.15), text_y),
+  stats = [{'origin': (get_x(0.025), text_y),
             'text': 'count: {}'.format(idx),
             'fill': blue,
-            'font': font_small},
-           {'origin': (get_x(0.4), text_y),
+            'font': font_stats},
+           {'origin': (get_x(0.225), text_y),
             'text': 'time: {:.1f}'.format(running_time),
             'fill': black,
-            'font': font_small},
-           {'origin': (get_x(0.75), text_y),
-            'text': '{:.1f} / min'.format(per_min),
+            'font': font_stats},
+           {'origin': (get_x(0.425), text_y),
+            'text': 'avg: {:.1f} / min'.format(avg),
             'fill': black,
-            'font': font_small}]
+            'font': font_stats},
+           {'origin': (get_x(0.725), text_y),
+            'text': 'peak: {:.1f} / min'.format(peak),
+            'fill': black,
+            'font': font_stats}]
 
   img = add_text(img, stats)
 

@@ -31,7 +31,7 @@ def write_segment_img(img, out_dir, file_ext):
   write_img(img, path)
 
 
-def process(in_path, out_dir, file_ext, threshold=127):
+def process(in_path, out_dir, file_ext, threshold=127, resize=False):
   img = cv2.imread(in_path)
   if img is None:
     print("couldn't read image: {}".format(in_path))
@@ -45,14 +45,16 @@ def process(in_path, out_dir, file_ext, threshold=127):
 
   for dim in crop_dims:
     crop = img[dim[0], dim[1]]
-    small = cv2.resize(crop, (50, 50))
-    write_segment_img(small, out_dir, file_ext)
+    if resize:
+      crop = cv2.resize(crop, (50, 50))
+    write_segment_img(crop, out_dir, file_ext)
 
 
 def main():
   parser = argparse.ArgumentParser()
   parser.add_argument('in_path', help='path to input image', type=str)
   parser.add_argument('out_dir', help='directory to output results', type=str)
+  parser.add_argument('--resize', help='whether to resize image or not', type=bool)
   parser.add_argument('--ext', help='output file extension', type=str,
                       default='jpg')
   parser.add_argument('--threshold', help='threshold 0-255', type=int,
@@ -67,7 +69,7 @@ def main():
   debug = args.debug
   debug_dir = args.debug_dir
 
-  process(args.in_path, args.out_dir, args.ext, args.threshold)
+  process(args.in_path, args.out_dir, args.ext, args.threshold, args.resize)
 
 
 if __name__ == '__main__':

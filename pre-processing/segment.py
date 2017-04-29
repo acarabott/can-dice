@@ -38,7 +38,7 @@ def write_debug_img(img, key):
   write_img(img, path)
 
 
-def process_contour(contour, img):
+def process_contour(contour, img, resize):
   area_contour = cv2.contourArea(contour)
   area_img = img.shape[0] * img.shape[1]
   area_ratio = area_contour / area_img
@@ -60,7 +60,6 @@ def process_contour(contour, img):
   if debug:
     write_debug_img(cropped, 'cropped')
 
-
   # straighten image
   angle = rect_min_area[2]
   keep = angle > -45.  # if the angle is less than -45 we need to swap w/h
@@ -81,7 +80,6 @@ def process_contour(contour, img):
   if debug:
     write_debug_img(straight, 'straight')
 
-
   # crop based on nonzero values
   nonzero = straight.nonzero()
   if len(nonzero[0]) == 0 or len(nonzero[1]) == 0:
@@ -94,7 +92,6 @@ def process_contour(contour, img):
   straight_crop = straight[y_start:y_end, x_start:x_end]
   if debug:
     write_debug_img(straight_crop, 'straight_crop')
-
 
   # put into square box
   s = straight_crop.shape[0:2]
@@ -109,17 +106,17 @@ def process_contour(contour, img):
   if debug:
     write_debug_img(square, 'square')
 
-
   if 0 in square.shape:
     return
 
   # resize
-  small = cv2.resize(square, (40, 40))
+  if resize:
+    return cv2.resize(square, (40, 40))
 
-  return small
+  return square
 
 
-def get_segmented(img, threshold):
+def get_segmented(img, threshold, resize):
   global debug
 
   img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -133,7 +130,6 @@ def get_segmented(img, threshold):
   if debug:
     write_debug_img(blurred, '02-blurred')
 
-
   # white dice on black
 #     retval, threshold = cv2.threshold(blurred, 150, 255, cv2.THRESH_BINARY)
   # black dice on white
@@ -144,30 +140,33 @@ def get_segmented(img, threshold):
 
   min_idx = img.shape.index(min(img.shape[0:2]))
   max_idx = abs(1 - min_idx)
-  ratio = img.shape[min_idx] / img.shape[max_idx]
-  dim = 200
-  size = (dim, int(dim * ratio))
-  resized = cv2.resize(threshold, size)
 
-  resized, contours, hierarchy = cv2.findContours(resized,
-                                                  cv2.RETR_EXTERNAL,
-                                                  cv2.CHAIN_APPROX_NONE)
+  for_contours = threshold
+  if resize:
+    ratio = img.shape[min_idx] / img.shape[max_idx]
+    dim = 200
+    size = (dim, int(dim * ratio))
+    for_contours = cv2.resize(threshold, size)
+
+  for_contours, contours, hierarchy = cv2.findContours(for_contours,
+                                                       cv2.RETR_EXTERNAL,
+                                                       cv2.CHAIN_APPROX_NONE)
   if debug:
-    cimg = np.zeros(resized.shape)
+    cimg = np.zeros(for_contours.shape)
     cv2.drawContours(cimg, contours, -1, 255)
     write_debug_img(cimg, '04-contours')
 
-  processed = [process_contour(c, resized) for c in contours]
+  processed = [process_contour(c, for_contours, resize) for c in contours]
   return [p for p in processed if p is not None]
 
 
-def process(in_path, out_dir, file_ext, threshold=127):
+def process(in_path, out_dir, file_ext, threshold=127, resize=False):
   img = cv2.imread(in_path)
   if img is None:
     print("couldn't read image: {}".format())
     return
 
-  for i, segment in enumerate(get_segmented(img, threshold)):
+  for i, segment in enumerate(get_segmented(img, threshold, resize)):
     write_segment_img(segment, out_dir, file_ext)
 
 
@@ -175,6 +174,7 @@ def main():
   parser = argparse.ArgumentParser()
   parser.add_argument('in_path', help='path to input image', type=str)
   parser.add_argument('out_dir', help='directory to output results', type=str)
+  parser.add_argument('--resize', help='whether to resize image or not', type=bool)
   parser.add_argument('--ext', help='output file extension', type=str,
                       default='png')
   parser.add_argument('--threshold', help='threshold 0-255', type=int,
@@ -189,7 +189,7 @@ def main():
   debug = args.debug
   debug_dir = args.debug_dir
 
-  process(args.in_path, args.out_dir, args.ext, args.threshold)
+  process(args.in_path, args.out_dir, args.ext, args.threshold, args.resize)
 
 
 if __name__ == '__main__':

@@ -17,6 +17,7 @@ def main():
   parser.add_argument('in_path', help='glob for input images', type=str)
   parser.add_argument('out_dir', help='directory to output results', type=str)
   parser.add_argument('threshold', help='threshold see relevant file', type=int)
+  parser.add_argument('--resize', help='whether to resize or not', type=bool)
   parser.add_argument('--file_ext', help='output file extension', type=str,
                       default='jpg')
   args = parser.parse_args()
@@ -25,7 +26,7 @@ def main():
   print(len(imgs))
 
   for i, img in enumerate(imgs):
-    pargs = [img, args.out_dir, args.file_ext, args.threshold]
+    pargs = [img, args.out_dir, args.file_ext, args.threshold, args.resize]
 
     if args.action == 'crop':
       crop.process(*pargs)

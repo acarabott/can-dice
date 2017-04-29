@@ -39,6 +39,13 @@ def write_debug_img(img, key):
 
 
 def process_contour(contour, img):
+  area_contour = cv2.contourArea(contour)
+  area_img = img.shape[0] * img.shape[1]
+  area_ratio = area_contour / area_img
+
+  if area_ratio < 0.1:
+    return None
+
   # dice min area (rotated rect)
   rect_min_area = cv2.minAreaRect(contour)
   rect_min_points = cv2.boxPoints(rect_min_area)

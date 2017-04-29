@@ -8,7 +8,7 @@ import argparse
 
 def main():
   parser = argparse.ArgumentParser()
-  parser.add_argument('in_dir', help='path to input image', type=str)
+  parser.add_argument('in_dir', help='path to input directory', type=str)
   parser.add_argument('out_dir', help='directory to output results', type=str)
   parser.add_argument('--thresh', help='file size threshold (bytes), only keep files >=',
                       type=int, default=1600)

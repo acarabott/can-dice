@@ -2,7 +2,7 @@ tensorflow/trained-models/
 *.swp
 *.jpg
 *.png
-tensor-flow/flower_data
+tensorflow/flower_data
 cv/imgs
 cv/python/output
 *.DS_Store

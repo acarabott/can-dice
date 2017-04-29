@@ -126,9 +126,9 @@ def get_segmented(img, threshold):
   if debug:
     write_debug_img(img_gray, '01-gray')
 
-  blur_size = (img_gray.shape[0] * 0.012, img_gray.shape[1] * 0.012)
+  blur_size = (img_gray.shape[0], img_gray.shape[1])
   coeff = 0.012
-  blur_size = tuple([max(1, d * coeff) for d in img_gray.shape[0:2]])
+  blur_size = tuple([max(1, int(d * coeff)) for d in img_gray.shape[0:2]])
   blurred = cv2.blur(img_gray, blur_size)
   if debug:
     write_debug_img(blurred, '02-blurred')

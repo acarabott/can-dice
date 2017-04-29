@@ -164,7 +164,7 @@ def get_segmented(img, threshold):
 def process(in_path, out_dir, file_ext, threshold=127):
   img = cv2.imread(in_path)
   if img is None:
-    print("couldn't read image")
+    print("couldn't read image: {}".format())
     return
 
   for i, segment in enumerate(get_segmented(img, threshold)):

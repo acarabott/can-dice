@@ -36,10 +36,10 @@ def classify():
         file_path = tmp.name
         file.save(file_path)
         result = brain.run(file_path)
-        return 'result: {}'.format(result)
+        return str(result[0])
 
   else:
-    return 'you need to POST to this url'
+    return "you need to POST a jpg to this url with file key 'img'"
 
 
 def setup():

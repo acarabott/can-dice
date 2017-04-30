@@ -37,36 +37,44 @@ import argparse
 import numpy as np
 import tensorflow as tf
 
-FLAGS = None
 
-
-def run_inference_on_image(image):
-  if not tf.gfile.Exists(image):
-    tf.logging.fatal('File does not exist %s', image)
-  image_data = tf.gfile.FastGFile(image, 'rb').read()
-
-  with tf.gfile.FastGFile('{}/output_graph.pb'.format(FLAGS.model_dir), 'rb') as f:
+def create_graph(graph_path):
+  with tf.gfile.FastGFile(graph_path, 'rb') as f:
     graph_def = tf.GraphDef()
     graph_def.ParseFromString(f.read())
     tf.import_graph_def(graph_def, name='')
 
-  with tf.Session() as sess:
-    softmax_tensor = sess.graph.get_tensor_by_name('final_result:0')
-    predictions = sess.run(softmax_tensor,
-                           {'DecodeJpeg/contents:0': image_data})
-    predictions = np.squeeze(predictions)
 
-    lookup = tf.gfile.GFile('{}/output_labels.txt'.format(FLAGS.model_dir)).readlines()
+def create_lookup(lookup_path):
+  if not tf.gfile.Exists(lookup_path):
+    tf.logging.fatal('lookup file does not exist %s', lookup_path)
 
-    top_k = predictions.argsort()[-FLAGS.num_top_predictions:][::-1]
-    for node_id in top_k:
-      human_string = lookup[node_id]
-      score = predictions[node_id]
-      print('%s (score = %.5f)' % (human_string, score))
+  lines = tf.gfile.GFile(lookup_path).readlines()
+  return [int(l.replace('\n', '')) for l in lines]
 
 
-def main():
-  run_inference_on_image(FLAGS.image_file)
+def run_inference_on_image(sess, image, softmax_tensor, lookup, num_top_predictions):
+  if not tf.gfile.Exists(image):
+    tf.logging.fatal('File does not exist %s', image)
+  image_data = tf.gfile.FastGFile(image, 'rb').read()
+
+  predictions = sess.run(softmax_tensor, {'DecodeJpeg/contents:0': image_data})
+  predictions = np.squeeze(predictions)
+
+  top = predictions.argsort()[-1]
+  return (lookup[top], predictions[top])
+
+
+def main(args):
+  create_graph('{}/output_graph.pb'.format(args.model_dir))
+  lookup = create_lookup('{}/output_labels.txt'.format(args.model_dir))
+
+  sess = tf.Session()
+  softmax_tensor = sess.graph.get_tensor_by_name('final_result:0')
+  result = run_inference_on_image(sess, args.image_file, softmax_tensor, lookup, 1)
+  print(result)
+
+  sess.close()
 
 
 if __name__ == '__main__':
@@ -88,6 +96,7 @@ if __name__ == '__main__':
       default=1,
       help='Display this many predictions.'
   )
-  FLAGS, unparsed = parser.parse_known_args()
 
-  main()
+  args, unparsed = parser.parse_known_args()
+
+  main(args)

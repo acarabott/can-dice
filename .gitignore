@@ -1,3 +1,4 @@
+*.whl
 tensorflow/trained-models/
 *.swp
 *.jpg

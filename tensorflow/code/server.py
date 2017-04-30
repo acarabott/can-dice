@@ -1,10 +1,12 @@
 from flask import Flask
 from flask import request
-from werkzeug.utils import secure_filename
-import os
+import classify_image as brain
+import atexit
+import tempfile
 
 UPLOAD_FOLDER = './server-data'
-ALLOWED_EXTENSIONS = set(['jpg', 'jpeg', 'png'])
+ALLOWED_EXTENSIONS = set(['jpg', 'jpeg'])
+MODEL_DIR = '/Users/ac/rca-dev/17-02-change-a-number/can-dice/tensorflow/trained-models/98.4-dice-i05b-labelled-s50000-r0.01-a98.4'
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -21,8 +23,6 @@ def hello():
 
 @app.route('/classify', methods=['GET', 'POST'])
 def classify():
-  print('classify')
-  print(request.method)
   if request.method == 'POST':
     if 'img' not in request.files:
       return 'you need to POST an image with key img'
@@ -32,13 +32,25 @@ def classify():
       return 'empty file posted'
 
     if file and allowed_file(file.filename):
-      filename = secure_filename(file.filename)
-      file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-      return 'File uploaded!'
+      with tempfile.NamedTemporaryFile(suffix='.jpg', prefix='dice') as tmp:
+        file_path = tmp.name
+        file.save(file_path)
+        result = brain.run(file_path)
+        return 'result: {}'.format(result)
 
   else:
-    return 'whatcha wanna classify?'
+    return 'you need to POST to this url'
+
+
+def setup():
+  brain.setup(MODEL_DIR)
+
+
+def cleanup():
+  brain.cleanup()
 
 
 if __name__ == '__main__':
+  setup()
+  atexit.register(cleanup)
   app.run(debug=True)

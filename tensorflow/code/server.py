@@ -17,8 +17,8 @@ def allowed_file(filename):
 
 
 @app.route('/')
-def hello():
-  return "Hello World!"
+def index():
+  return "POST a jpeg image with file key 'img' to /classify"
 
 
 @app.route('/classify', methods=['GET', 'POST'])

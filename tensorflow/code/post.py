@@ -1,10 +1,13 @@
 import requests
+import os
 
 url = 'http://localhost:5000/classify'
 
-img = '/Users/ac/rca-dev/17-02-change-a-number/can-dice/data-set/05b-labelled/6/15251.jpg'
+data_set = '/Users/ac/rca-dev/17-02-change-a-number/can-dice/data-set/05b-labelled/'
 
-files = {'img': open(img, 'rb')}
-r = requests.post(url, files=files)
+imgs = [os.path.join(data_set, i) for i in ['6/15251.jpg', '4/00070.jpg', '1/00123.jpg']]
 
-print(r.text)
+for img in imgs:
+  files = {'img': open(img, 'rb')}
+  r = requests.post(url, files=files)
+  print(r.text)

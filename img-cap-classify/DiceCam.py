@@ -7,13 +7,18 @@ class DiceCam():
 
   def __init__(self, *led_pins):
     super(DiceCam, self).__init__()
+    self.led_pins = [*led_pins]
+
+  def __enter__(self):
+    self.setup()
+    return self
+
+  def __exit__(self, type, value, traceback):
+    self.cleanup()
+
+  def setup(self):
     GPIO.setmode(GPIO.BCM)
     GPIO.setwarnings(False)
-
-    self.led_pins = [*led_pins]
-    self.setup_leds()
-
-  def setup_leds(self):
     for pin in self.led_pins:
       GPIO.setup(pin, GPIO.OUT)
 
@@ -27,8 +32,7 @@ class DiceCam():
   def leds_off(self):
     self.set_leds(GPIO.LOW)
 
-  def capture(self, out_path):
-    self.leds_on()
+  def _take_picture(self, out_path):
     subprocess.call(['raspistill',
                      '--nopreview',
                      '-w', '1640',
@@ -43,6 +47,10 @@ class DiceCam():
                      '--contrast', '90',
                      '--brightness', '30',
                      '-o', out_path])
+
+  def capture(self, out_path):
+    self.leds_on()
+    self._take_picture(out_path)
     self.leds_off()
 
   def cleanup(self):

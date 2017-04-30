@@ -1,0 +1,4 @@
+after building opencv globally, to 'install' in virtual env symlink it to /Users/ac/rca-dev/17-02-change-a-number/can-dice/venv/lib/python3.6/site-packages/cv2.so
+
+build tensorflow to .whl and install
+

@@ -37,6 +37,10 @@ import argparse
 import numpy as np
 import tensorflow as tf
 
+lookup = None
+sess = None
+softmax_tensor = None
+
 
 def create_graph(graph_path):
   with tf.gfile.FastGFile(graph_path, 'rb') as f:
@@ -53,7 +57,9 @@ def create_lookup(lookup_path):
   return [int(l.replace('\n', '')) for l in lines]
 
 
-def run_inference_on_image(sess, image, softmax_tensor, lookup, num_top_predictions):
+def run(image):
+  global sess, softmax_tensor, lookup
+
   if not tf.gfile.Exists(image):
     tf.logging.fatal('File does not exist %s', image)
   image_data = tf.gfile.FastGFile(image, 'rb').read()
@@ -65,16 +71,35 @@ def run_inference_on_image(sess, image, softmax_tensor, lookup, num_top_predicti
   return (lookup[top], predictions[top])
 
 
-def main(args):
-  create_graph('{}/output_graph.pb'.format(args.model_dir))
-  lookup = create_lookup('{}/output_labels.txt'.format(args.model_dir))
+def setup(model_dir):
+  global sess
+  if sess is not None:
+    cleanup()
+
+  create_graph('{}/output_graph.pb'.format(model_dir))
+
+  global lookup
+  lookup = create_lookup('{}/output_labels.txt'.format(model_dir))
 
   sess = tf.Session()
-  softmax_tensor = sess.graph.get_tensor_by_name('final_result:0')
-  result = run_inference_on_image(sess, args.image_file, softmax_tensor, lookup, 1)
-  print(result)
 
+  global softmax_tensor
+  softmax_tensor = sess.graph.get_tensor_by_name('final_result:0')
+
+
+def cleanup():
+  global lookup, sess, softmax_tensor
   sess.close()
+  sess = None
+  lookup = None
+  softmax_tensor = None
+
+
+def main(model_dir, image_file):
+  setup(model_dir)
+  result = run(image_file)
+  print(result)
+  cleanup()
 
 
 if __name__ == '__main__':
@@ -90,13 +115,5 @@ if __name__ == '__main__':
       help='Absolute path to image file.'
   )
 
-  parser.add_argument(
-      '--num_top_predictions',
-      type=int,
-      default=1,
-      help='Display this many predictions.'
-  )
-
   args, unparsed = parser.parse_known_args()
-
-  main(args)
+  main(args.model_dir, args.image_file)

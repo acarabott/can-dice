@@ -18,14 +18,16 @@ class LSM9DS1(object):
     self.bus_num = bus_num
     self.address = address
     self.bus = SMBus(self.bus_num)
-    self.curr_x = self.get_x()
-    self.prev_x = self.get_x()
-    self.curr_y = self.get_y()
-    self.prev_x = self.get_y()
-    self.curr_z = self.get_z()
-    self.prev_z = self.get_z()
-    self.curr_d = 0
-    self.prev_d = 0
+    self.setup()
+
+    self.curr_x = 0.0
+    self.prev_x = 0.0
+    self.curr_y = 0.0
+    self.prev_x = 0.0
+    self.curr_z = 0.0
+    self.prev_z = 0.0
+    self.curr_d = 0.0
+    self.prev_d = 0.0
     self.slow = 0.3
     self.thresh = 0.05
     self.prev_moving = False
@@ -35,12 +37,15 @@ class LSM9DS1(object):
     self.start_actions = {}
     self.stop_actions = {}
     self.loop_actions = {}
-
     self.start_time = None
 
-    self.setup_accelerometer()
+  def __enter__(self):
+    return self
 
-  def setup_accelerometer(self):
+  def __exit__(self, type, value, traceback):
+    self.stop()
+
+  def setup(self):
     #  enable accelerometer @ 50hz
     self.bus.write_byte_data(self.address, CTRL_REG6_XL, 0x40)
 

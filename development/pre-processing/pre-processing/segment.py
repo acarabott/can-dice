@@ -38,7 +38,7 @@ def write_debug_img(img, key):
   write_img(img, path)
 
 
-def process_contour(contour, img, resize):
+def process_contour(contour, img):
   area_contour = cv2.contourArea(contour)
   area_img = img.shape[0] * img.shape[1]
   area_ratio = area_contour / area_img
@@ -93,30 +93,25 @@ def process_contour(contour, img, resize):
   if debug:
     write_debug_img(straight_crop, 'straight_crop')
 
-  # put into square box
-  s = straight_crop.shape[0:2]
-  max_dim = max(s)
-  x_start = int((max_dim - s[0]) / 2)
-  x_end = x_start + s[0]
-  y_start = int((max_dim - s[1]) / 2)
-  y_end = y_start + s[1]
+  square = np.zeros(img.shape[0:2])
+  y_len = y_end - y_start
+  x_len = x_end - x_start
+  y_start_sq = int((square.shape[0] - y_len) / 2)
+  y_end_sq = y_start_sq + y_len
+  x_start_sq = int((square.shape[1] - x_len) / 2)
+  x_end_sq = x_start_sq + x_len
 
-  square = np.zeros((max_dim, max_dim))
-  square[x_start:x_end, y_start:y_end] = straight_crop
+  square[y_start_sq:y_end_sq, x_start_sq:x_end_sq] = straight_crop
   if debug:
     write_debug_img(square, 'square')
 
   if 0 in square.shape:
     return
 
-  # resize
-  if resize:
-    return cv2.resize(square, (40, 40))
-
   return square
 
 
-def get_segmented(img, threshold, resize):
+def get_segmented(img, threshold):
   global debug
 
   img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -138,35 +133,25 @@ def get_segmented(img, threshold, resize):
   if debug:
     write_debug_img(threshold, '03-threshold')
 
-  min_idx = img.shape.index(min(img.shape[0:2]))
-  max_idx = abs(1 - min_idx)
-
-  for_contours = threshold
-  if resize:
-    ratio = img.shape[min_idx] / img.shape[max_idx]
-    dim = 200
-    size = (dim, int(dim * ratio))
-    for_contours = cv2.resize(threshold, size)
-
-  for_contours, contours, hierarchy = cv2.findContours(for_contours,
-                                                       cv2.RETR_EXTERNAL,
-                                                       cv2.CHAIN_APPROX_NONE)
+  threshold, contours, hierarchy = cv2.findContours(threshold,
+                                                    cv2.RETR_EXTERNAL,
+                                                    cv2.CHAIN_APPROX_NONE)
   if debug:
-    cimg = np.zeros(for_contours.shape)
+    cimg = np.zeros(threshold.shape)
     cv2.drawContours(cimg, contours, -1, 255)
     write_debug_img(cimg, '04-contours')
 
-  processed = [process_contour(c, for_contours, resize) for c in contours]
+  processed = [process_contour(c, threshold) for c in contours]
   return [p for p in processed if p is not None]
 
 
-def process(in_path, out_dir, file_ext, threshold=127, resize=False):
+def process(in_path, out_dir, file_ext, threshold=127):
   img = cv2.imread(in_path)
   if img is None:
     print("couldn't read image: {}".format())
     return
 
-  for i, segment in enumerate(get_segmented(img, threshold, resize)):
+  for i, segment in enumerate(get_segmented(img, threshold)):
     write_segment_img(segment, out_dir, file_ext)
 
 
@@ -174,7 +159,6 @@ def main():
   parser = argparse.ArgumentParser()
   parser.add_argument('in_path', help='path to input image', type=str)
   parser.add_argument('out_dir', help='directory to output results', type=str)
-  parser.add_argument('--resize', help='whether to resize image or not', type=bool)
   parser.add_argument('--ext', help='output file extension', type=str,
                       default='png')
   parser.add_argument('--threshold', help='threshold 0-255', type=int,

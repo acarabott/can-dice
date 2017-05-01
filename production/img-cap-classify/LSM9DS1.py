@@ -1,4 +1,4 @@
-import smbus
+from smbus import SMBus
 import threading
 
 OUT_X_L_XL = 0x28
@@ -17,7 +17,7 @@ class LSM9DS1(object):
     super(LSM9DS1, self).__init__()
     self.bus_num = bus_num
     self.address = address
-    self.bus = smbus.SMBus(self.bus_num)
+    self.bus = SMBus(self.bus_num)
     self.curr_x = self.get_x()
     self.prev_x = self.get_x()
     self.curr_y = self.get_y()

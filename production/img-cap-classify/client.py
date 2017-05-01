@@ -21,7 +21,7 @@ def capture_and_post_factory(cam):
 
 
 def main():
-  with DiceCam(12, 13, 18) as cam, LSM9DS1(1, 0x6) as accel:
+  with DiceCam(12, 13, 18) as cam, LSM9DS1(1, 0x6b) as accel:
     accel.add_stop_action('capture', capture_and_post_factory(cam))
     while True:
       time.sleep(0.05)

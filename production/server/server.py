@@ -10,6 +10,7 @@ import os
 
 
 UPLOAD_FOLDER = './uploads'
+UPLOAD_LIMIT = 10
 ALLOWED_EXTENSIONS = set(['jpg', 'jpeg'])
 MODEL_PATH = './model.pb'
 LABELS_PATH = './labels.txt'
@@ -45,6 +46,20 @@ def classify_image(file):
   return result
 
 
+def clean_uploads():
+  uploads = os.listdir(UPLOAD_FOLDER)
+  oldest = uploads[::-1][UPLOAD_LIMIT:]
+
+  print(oldest)
+  for ul in oldest:
+    ul_full = os.path.join(UPLOAD_FOLDER, ul)
+    try:
+      os.remove(ul_full)
+    except OSError as e:
+      print("couldn't delete file {}".format(ul_full))
+      pass
+
+
 @app.route('/')
 def index():
   return "POST a jpeg image with file key 'img' to /classify"
@@ -63,6 +78,7 @@ def classify():
 
     if file and allowed_file(file.filename):
       save_image(file)
+      clean_uploads()
       result = classify_image(file)
       print('{} - {}'.format(result, time.asctime()))
       return result

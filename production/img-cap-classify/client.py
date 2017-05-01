@@ -7,10 +7,6 @@ import tempfile
 
 SERVER_URL = 'http://localhost:5000/classify'
 
-cam = DiceCam(12, 13, 18)
-accel = LSM9DS1(1, 0x6b)
-running = True
-
 
 def capture_and_post_factory(cam):
   def capture_and_post():
@@ -27,7 +23,7 @@ def capture_and_post_factory(cam):
 def main():
   with DiceCam(12, 13, 18) as cam, LSM9DS1(1, 0x6) as accel:
     accel.add_stop_action('capture', capture_and_post_factory(cam))
-    while running:
+    while True:
       time.sleep(0.05)
 
 

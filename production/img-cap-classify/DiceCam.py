@@ -10,6 +10,7 @@ class DiceCam(object):
 
     self.led_pins = list(led_pins)
     self.camera = PiCamera()
+    self.camera.stop_preview()
     self.camera.resolution = (1640, 922)
     self.camera.iso = 800
     self.camera.awb_mode = 'fluorescent'

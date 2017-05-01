@@ -24,7 +24,6 @@ def main():
   print("started camera client")
   with DiceCam(12, 13, 18) as cam, LSM9DS1(1, 0x6b) as accel:
     accel.add_stop_action('capture', capture_and_post_factory(cam))
-    accel.start()
     while True:
       time.sleep(0.05)
 

@@ -40,6 +40,7 @@ class LSM9DS1(object):
     self.start_time = None
 
   def __enter__(self):
+    self.start()
     return self
 
   def __exit__(self, type, value, traceback):

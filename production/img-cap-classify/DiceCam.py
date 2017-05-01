@@ -1,5 +1,5 @@
-import subprocess
 import RPi.GPIO as GPIO
+from picamera import PiCamera
 
 
 class DiceCam():
@@ -8,6 +8,16 @@ class DiceCam():
   def __init__(self, *led_pins):
     super(DiceCam, self).__init__()
     self.led_pins = [*led_pins]
+    self.camera = PiCamera()
+    self.camera.resolution = (1640, 922)
+    self.camera.iso = 800
+    self.camera.awb_mode = 'fluorescent'
+    self.camera.brightness = 30
+    self.camera.contrast = 90
+    self.camera.exposure_mode = 'verylong'
+    self.camera.meter_mode = 'spot'
+    self.camera.shutter_speed = 25000
+    self.camera.color_effects = (128, 128)
 
   def __enter__(self):
     self.setup()
@@ -32,25 +42,9 @@ class DiceCam():
   def leds_off(self):
     self.set_leds(GPIO.LOW)
 
-  def _take_picture(self, out_path):
-    subprocess.call(['raspistill',
-                     '--nopreview',
-                     '-w', '1640',
-                     '-h', '922',
-                     '-t', '1',
-                     '-ex', 'verylong',
-                     '-cfx', '128:128',
-                     '-awb', 'fluorescent',
-                     '-mm', 'spot',
-                     '-ISO', '800',
-                     '--shutter', '25000',
-                     '--contrast', '90',
-                     '--brightness', '30',
-                     '-o', out_path])
-
-  def capture(self, out_path):
+  def capture(self, out):
     self.leds_on()
-    self._take_picture(out_path)
+    self.camera.capture(out, 'jpeg')
     self.leds_off()
 
   def cleanup(self):

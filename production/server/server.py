@@ -3,6 +3,8 @@ from flask import request
 from Brain import Brain
 import atexit
 import tempfile
+import io
+import dice_processing
 
 UPLOAD_FOLDER = './server-data'
 ALLOWED_EXTENSIONS = set(['jpg', 'jpeg'])
@@ -35,11 +37,21 @@ def classify():
       return 'empty file posted'
 
     if file and allowed_file(file.filename):
-      with tempfile.NamedTemporaryFile(suffix='.jpg', prefix='dice') as tmp:
-        file_path = tmp.name
-        file.save(file_path)
-        result = brain.run(file_path)
-        return str(result[0])
+      # with tempfile.NamedTemporaryFile(suffix='.jpg', prefix='dice') as tmp:
+        # tmp.write(file.read())
+      cropped = dice_processing.crop_dice(file)
+      results = []
+
+      for img in cropped:
+        with io.BytesIO() as output:
+           img.convert('RGB').save(output, 'JPEG')
+           data = output.getvalue()
+           result = brain.classify(data)
+           results.append(str(result[0]))
+
+      result = ''.join(str(i) for i in results)
+      print(result)
+      return result
 
   else:
     return "you need to POST a jpg to this url with file key 'img'"

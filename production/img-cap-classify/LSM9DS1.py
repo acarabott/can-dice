@@ -124,11 +124,9 @@ class LSM9DS1():
       self.curr_moving = self.curr_d > self.thresh
 
       if self.curr_moving and not self.prev_moving:
-        print("started")
         for k, func in self.start_actions.items():
           func()
       elif not self.curr_moving and self.prev_moving:
-        print('stopped')
         for k, func in self.stop_actions.items():
           func()
 

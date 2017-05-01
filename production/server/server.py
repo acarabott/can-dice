@@ -1,12 +1,15 @@
 from flask import Flask
 from flask import request
-import classify_image as brain
+from Brain import Brain
 import atexit
 import tempfile
 
 UPLOAD_FOLDER = './server-data'
 ALLOWED_EXTENSIONS = set(['jpg', 'jpeg'])
-MODEL_DIR = '/Users/ac/rca-dev/17-02-change-a-number/can-dice/tensorflow/trained-models/98.4-dice-i05b-labelled-s50000-r0.01-a98.4'
+MODEL_PATH = './model.pb'
+LABELS_PATH = './labels.txt'
+
+brain = Brain(MODEL_PATH, LABELS_PATH)
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -42,15 +45,11 @@ def classify():
     return "you need to POST a jpg to this url with file key 'img'"
 
 
-def setup():
-  brain.setup(MODEL_DIR)
-
-
 def cleanup():
-  brain.cleanup()
+  global brain
+  brain.exit()
 
 
 if __name__ == '__main__':
-  setup()
   atexit.register(cleanup)
   app.run(debug=True)

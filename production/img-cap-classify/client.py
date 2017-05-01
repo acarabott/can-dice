@@ -13,7 +13,7 @@ def capture_and_post_factory(cam, server_url):
     with tempfile.TemporaryFile() as img:
       cam.capture(img)
       img.seek(0)
-      files = { 'img': ('img.jpg', img) }
+      files = {'img': ('img.jpg', img)}
       try:
         r = requests.post(server_url, files=files)
         print(r.text)

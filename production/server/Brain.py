@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
 
+
 class Brain():
   """Image classification based on retrained Inception"""
 
@@ -30,12 +31,13 @@ class Brain():
     lines = tf.gfile.GFile(lookup_path).readlines()
     return [int(l.replace('\n', '')) for l in lines]
 
-  def classify(self, image_data):
-    # if not tf.gfile.Exists(image):
-    #   tf.logging.fatal('File does not exist %s', image)
-    # image_data = tf.gfile.FastGFile(image, 'rb').read()
+  def classify(self, image):
+    if type(image) is str:
+      if not tf.gfile.Exists(image):
+        tf.logging.fatal('File does not exist %s', image)
+      image = tf.gfile.FastGFile(image, 'rb').read()
 
-    predictions = self.sess.run(self.softmax_tensor, {'DecodeJpeg/contents:0': image_data})
+    predictions = self.sess.run(self.softmax_tensor, {'DecodeJpeg/contents:0': image})
     predictions = np.squeeze(predictions)
 
     top = predictions.argsort()[-1]

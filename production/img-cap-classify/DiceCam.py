@@ -2,7 +2,7 @@ import RPi.GPIO as GPIO
 from picamera import PiCamera
 
 
-class DiceCam():
+class DiceCam(object):
   """Dice Cam! Flash the LEDs, take a pic!"""
 
   def __init__(self, *led_pins):

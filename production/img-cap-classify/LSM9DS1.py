@@ -10,7 +10,7 @@ OUT_Z_H_XL = 0x2D
 CTRL_REG6_XL = 0x20
 
 
-class LSM9DS1():
+class LSM9DS1(object):
   """Watches an LSM9DS1 to see if it is moving or not"""
 
   def __init__(self, bus_num=1, address=0x6b):

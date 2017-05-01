@@ -12,9 +12,13 @@ def capture_and_post_factory(cam, server_url):
     print('capturing at {}'.format(time.asctime()))
     with tempfile.TemporaryFile() as img:
       cam.capture(img)
-      files = {'img': img}
-      r = requests.post(server_url, files=files)
-      print(r.text)
+      img.seek(0)
+      files = { 'img': ('img.jpg', img) }
+      try:
+        r = requests.post(server_url, files=files)
+        print(r.text)
+      except requests.ConnectionError:
+        print("connection error")
 
   return capture_and_post
 

@@ -91,16 +91,15 @@ class LSM9DS1(object):
     del self.loop_actions[key]
 
   def start(self):
-    if self.thread is not None:
-      self.thread.join()
-
+    self.stop()
     self.running.set()
     self.thread = threading.Thread(target=self.loop)
     self.thread.start()
 
   def stop(self):
     self.running.clear()
-    self.thread.join()
+    if self.thread is not None:
+      self.thread.join()
 
   def loop(self):
     while self.running.is_set():

@@ -16,7 +16,7 @@ class Brain():
     return self
 
   def __exit__(self, type, value, traceback):
-    self.sess.close()
+    self.exit()
 
   def create_graph(self, model_path):
     with tf.gfile.FastGFile(model_path, 'rb') as f:
@@ -41,3 +41,6 @@ class Brain():
 
     top = predictions.argsort()[-1]
     return (self.lookup[top], predictions[top])
+
+  def exit(self):
+    self.sess.close()

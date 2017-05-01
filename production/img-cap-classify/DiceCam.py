@@ -21,8 +21,9 @@ class DiceCam(object):
     self.camera.shutter_speed = 25000
     self.camera.color_effects = (128, 128)
 
-  def __enter__(self):
     self.setup()
+
+  def __enter__(self):
     return self
 
   def __exit__(self, type, value, traceback):

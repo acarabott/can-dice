@@ -2,11 +2,13 @@ from flask import Flask
 from flask import request
 from Brain import Brain
 import atexit
-import tempfile
+import datetime
 import io
 import dice_processing
+import os
 
-UPLOAD_FOLDER = './server-data'
+
+UPLOAD_FOLDER = './uploads'
 ALLOWED_EXTENSIONS = set(['jpg', 'jpeg'])
 MODEL_PATH = './model.pb'
 LABELS_PATH = './labels.txt'
@@ -31,14 +33,18 @@ def classify():
   if request.method == 'POST':
     if 'img' not in request.files:
       return 'you need to POST an image with key img'
+
     file = request.files['img']
 
     if file.filename == '':
       return 'empty file posted'
 
     if file and allowed_file(file.filename):
-      # with tempfile.NamedTemporaryFile(suffix='.jpg', prefix='dice') as tmp:
-        # tmp.write(file.read())
+      date_str = datetime.datetime.utcnow().strftime('%Y%m%d-%H%M%S-%f')
+
+      file_name = os.path.join(UPLOAD_FOLDER, '{}.jpg'.format(date_str))
+      file.save(file_name)
+
       cropped = dice_processing.crop_dice(file)
       results = []
 
@@ -64,4 +70,5 @@ def cleanup():
 
 if __name__ == '__main__':
   atexit.register(cleanup)
+  os.makedirs(UPLOAD_FOLDER, mode=0o755, exist_ok=True)
   app.run(host='0.0.0.0', debug=True)

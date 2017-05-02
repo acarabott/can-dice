@@ -1,5 +1,7 @@
 from flask import Flask
 from flask import request
+from flask import render_template
+from flask import send_from_directory
 from Brain import Brain
 import atexit
 import datetime
@@ -9,7 +11,7 @@ import dice_processing
 import os
 
 
-UPLOAD_FOLDER = './uploads'
+UPLOAD_FOLDER = 'uploads'
 UPLOAD_LIMIT = 10
 ALLOWED_EXTENSIONS = set(['jpg', 'jpeg'])
 MODEL_PATH = './model.pb'
@@ -27,7 +29,7 @@ def allowed_file(filename):
 
 def save_image(file):
   date_str = datetime.datetime.utcnow().strftime('%Y%m%d-%H%M%S-%f')
-  file_name = os.path.join(UPLOAD_FOLDER, '{}.jpg'.format(date_str))
+  file_name = os.path.join(app.config['UPLOAD_FOLDER'], '{}.jpg'.format(date_str))
   file.save(file_name)
 
 
@@ -47,12 +49,11 @@ def classify_image(file):
 
 
 def clean_uploads():
-  uploads = os.listdir(UPLOAD_FOLDER)
+  uploads = os.listdir(app.config['UPLOAD_FOLDER'])
   oldest = uploads[::-1][UPLOAD_LIMIT:]
 
-  print(oldest)
   for ul in oldest:
-    ul_full = os.path.join(UPLOAD_FOLDER, ul)
+    ul_full = os.path.join(app.config['UPLOAD_FOLDER'], ul)
     try:
       os.remove(ul_full)
     except OSError as e:
@@ -62,7 +63,17 @@ def clean_uploads():
 
 @app.route('/')
 def index():
-  return "POST a jpeg image with file key 'img' to /classify"
+  imgs = os.listdir(app.config['UPLOAD_FOLDER'])
+  numbers = ['123' for img in imgs]
+  results = zip(imgs, numbers)
+  return render_template('index.html', results=results)
+
+
+@app.route('/image/<path:filename>')
+def get_image(filename):
+  return send_from_directory(app.config['UPLOAD_FOLDER'],
+                             filename,
+                             as_attachment=True)
 
 
 @app.route('/classify', methods=['GET', 'POST'])

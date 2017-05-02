@@ -2,13 +2,17 @@ from flask import Flask
 from flask import request
 from flask import render_template
 from flask import send_from_directory
-from Brain import Brain
+from flask import g
+
 import atexit
 import datetime
 import time
 import io
-import dice_processing
 import os
+import sqlite3
+
+from Brain import Brain
+import dice_processing
 
 
 UPLOAD_FOLDER = 'uploads'
@@ -16,11 +20,54 @@ UPLOAD_LIMIT = 10
 ALLOWED_EXTENSIONS = set(['jpg', 'jpeg'])
 MODEL_PATH = './model.pb'
 LABELS_PATH = './labels.txt'
+DATABASE = 'dice.db'
 
 brain = Brain(MODEL_PATH, LABELS_PATH)
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+
+# Database bizniz --------------------------------------------------------------
+def get_db():
+  db = getattr(g, '_database', None)
+  if db is None:
+    db = g._database = sqlite3.connect(DATABASE)
+  db.row_factory = sqlite3.Row
+  return db
+
+
+@app.teardown_appcontext
+def close_connection(exception):
+  db = getattr(g, '_database', None)
+  if db is not None:
+    db.close()
+
+
+def query_db(query, args=(), one=False):
+  cur = get_db().execute(query, args)
+  rv = cur.fetchall()
+  cur.close()
+  return (rv[0] if rv else None) if one else rv
+
+
+def db_insert_result(file_name, result):
+  print(file_name, result)
+  db = get_db()
+  cursor = db.cursor()
+  cursor.execute('INSERT INTO dice VALUES (?,?)', (file_name, result))
+  db.commit()
+  db.close()
+
+
+def init_db():
+  with app.app_context():
+    db = get_db()
+    with app.open_resource('schema.sql', mode='r') as f:
+      db.cursor().executescript(f.read())
+    db.commit()
+
+# Database bizniz --------------------------------------------------------------
 
 
 def allowed_file(filename):
@@ -31,6 +78,7 @@ def save_image(file):
   date_str = datetime.datetime.utcnow().strftime('%Y%m%d-%H%M%S-%f')
   file_name = os.path.join(app.config['UPLOAD_FOLDER'], '{}.jpg'.format(date_str))
   file.save(file_name)
+  return file_name
 
 
 def classify_image(file):
@@ -44,7 +92,7 @@ def classify_image(file):
        result = brain.classify(data)
        results.append(str(result[0]))
 
-  result = ''.join(str(i) for i in results)
+  result = int(''.join(str(i) for i in results))
   return result
 
 
@@ -63,9 +111,8 @@ def clean_uploads():
 
 @app.route('/')
 def index():
-  imgs = os.listdir(app.config['UPLOAD_FOLDER'])
-  numbers = ['123' for img in imgs]
-  results = zip(imgs, numbers)
+  rows = query_db('select * from dice')
+  results = [tuple(r) for r in rows]
   return render_template('index.html', results=results)
 
 
@@ -88,11 +135,12 @@ def classify():
       return 'empty file posted'
 
     if file and allowed_file(file.filename):
-      save_image(file)
+      saved_path = save_image(file)
       clean_uploads()
       result = classify_image(file)
+      db_insert_result(os.path.basename(saved_path), result)
       print('{} - {}'.format(result, time.asctime()))
-      return result
+      return str(result)
 
   else:
     return "you need to POST a jpg to this url with file key 'img'"

@@ -6,28 +6,46 @@
 </head>
 <body>
   <h1>Dice</h1>
-  {% for result in results %}
-    <div class="diceroll">
-      <img src="/image/{{ result[0] }}">
-      <h3>{{ result[1] }}</h3>
-    </div>
-  {% endfor %}
-
 </body>
   <script>
+    function render(results) {
+      results.forEach(result => {
+        const imgEl = document.createElement('img');
+        imgEl.src = result['src'];
+
+        const resultEl = document.createElement('div');
+        resultEl.classList.add('result');
+        resultEl.textContent = result['result'];
+
+        const rollEl = document.createElement('div');
+        rollEl.classList.add('diceroll');
+
+        [imgEl, resultEl].forEach(el => rollEl.appendChild(el));
+
+        document.body.appendChild(rollEl);
+      });
+    }
+
+    function clear() {
+      const dicerolls = document.getElementsByClassName('diceroll');
+      Array.from(dicerolls).forEach(dr => dr.remove())
+    }
+
+    const results = {{ results|tojson|safe }};
+    render(results);
+
+
     const socket = new WebSocket(`ws://${location.host}/connect`);
     socket.addEventListener('open', event => {
       socket.send('connected');
     });
     socket.addEventListener('message', event => {
-      console.log('received msg');
-      console.log(event.data);
+      clear();
+      render(JSON.parse(event.data));
     });
 
     window.addEventListener('beforeunload', event => {
-      console.log('before unload');
       socket.close();
-      event.preventDefault();
     });
   </script>
 </html>

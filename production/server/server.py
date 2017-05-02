@@ -3,6 +3,8 @@ from flask import request
 from flask import render_template
 from flask import send_from_directory
 from flask import g
+from flask.json import dumps
+
 from flask_sockets import Sockets
 import gevent.wsgi
 from geventwebsocket.handler import WebSocketHandler
@@ -26,6 +28,7 @@ ALLOWED_EXTENSIONS = set(['jpg', 'jpeg'])
 MODEL_PATH = 'model.pb'
 LABELS_PATH = 'labels.txt'
 DATABASE = 'dice.db'
+IMAGE_ROUTE = '/image/'
 
 brain = Brain(MODEL_PATH, LABELS_PATH)
 
@@ -59,17 +62,15 @@ def close_connection(exception):
 def query_db(query, args=(), one=False):
   cur = get_db().execute(query, args)
   rv = cur.fetchall()
-  cur.close()
   return (rv[0] if rv else None) if one else rv
 
 
-def db_insert_result(file_name, result):
-  print(file_name, result)
+def db_insert_result(filename, result):
+  print(filename, result)
   db = get_db()
   cursor = db.cursor()
-  cursor.execute('INSERT INTO dice VALUES (?,?)', (file_name, result))
+  cursor.execute('INSERT INTO dice VALUES (?,?)', (filename, result))
   db.commit()
-  db.close()
 
 
 def init_db():
@@ -80,16 +81,18 @@ def init_db():
     db.commit()
 
 
+def get_results():
+  rows = query_db('select * from dice')
+  results = [{'src': '{}{}'.format(IMAGE_ROUTE, r[0]), 'result': r[1]} for r in rows]
+  return results
+
+
 # Sockets ----------------------------------------------------------------------
+
 
 @sockets.route('/connect')
 def connect_socket(ws):
   clients.append(ws)
-
-  try:
-    ws.send('connected')
-  except WebSocketError as e:
-    print('client already disconnected')
 
   while not ws.closed:
     ws.receive()
@@ -98,8 +101,10 @@ def connect_socket(ws):
 
 
 def notify_clients():
+  results = get_results()
+  json = dumps(results)
   for client in clients:
-    client.send('update!')
+    client.send(json)
 
 # Image handling ---------------------------------------------------------------
 
@@ -110,9 +115,9 @@ def allowed_file(filename):
 
 def save_image(file):
   date_str = datetime.datetime.utcnow().strftime('%Y%m%d-%H%M%S-%f')
-  file_name = os.path.join(app.config['UPLOAD_FOLDER'], '{}.jpg'.format(date_str))
-  file.save(file_name)
-  return file_name
+  filename = os.path.join(app.config['UPLOAD_FOLDER'], '{}.jpg'.format(date_str))
+  file.save(filename)
+  return filename
 
 
 def classify_image(file):
@@ -152,12 +157,10 @@ def cleanup():
 
 @app.route('/')
 def index():
-  rows = query_db('select * from dice')
-  results = [tuple(r) for r in rows]
-  return render_template('index.html', results=results)
+  return render_template('index.html', results=get_results())
 
 
-@app.route('/image/<path:filename>')
+@app.route('{}<path:filename>'.format(IMAGE_ROUTE))
 def get_image(filename):
   return send_from_directory(app.config['UPLOAD_FOLDER'],
                              filename,
@@ -187,6 +190,7 @@ def classify():
 
   else:
     return "you need to POST a jpg to this url with file key 'img'"
+
 
 @werkzeug.serving.run_with_reloader
 def run_server():

@@ -60,10 +60,17 @@ input {
   max-width: 20vw;
 }
 
+.diceroll:first-of-type {
+  display: block;
+  margin: 10px auto;
+  max-width: 40vw;
+}
+
 .diceroll {
+  display: inline-block;
   max-width: 30vw;
   border: 1px var(--my-blue) solid;
-  margin: 10px;
+  margin: 2.5vw;
 }
 
 .diceroll img {

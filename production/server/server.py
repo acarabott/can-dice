@@ -12,7 +12,6 @@ import werkzeug.serving
 
 import atexit
 import datetime
-import time
 import io
 import os
 import sqlite3
@@ -22,7 +21,7 @@ import dice_processing
 
 
 UPLOAD_FOLDER = 'uploads'
-UPLOAD_LIMIT = 10
+HISTORY_LIMIT = 10
 ALLOWED_EXTENSIONS = set(['jpg', 'jpeg'])
 MODEL_PATH = 'model.pb'
 LABELS_PATH = 'labels.txt'
@@ -33,7 +32,7 @@ brain = Brain(MODEL_PATH, LABELS_PATH)
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['UPLOAD_LIMIT'] = UPLOAD_LIMIT
+app.config['HISTORY_LIMIT'] = HISTORY_LIMIT
 app.config['DATABASE'] = DATABASE
 
 sockets = Sockets(app)
@@ -60,18 +59,16 @@ def close_connection(exception):
 
 
 def query_db(query, args=(), one=False):
-  cur = get_db().execute(query, args)
+  db = get_db()
+  cur = db.execute(query, args)
   rv = cur.fetchall()
+  db.commit()
   return (rv[0] if rv else None) if one else rv
 
 
 def db_insert_result(filename, result):
-  print(filename, result)
-  db = get_db()
-  cursor = db.cursor()
   now = datetime.datetime.now()
-  cursor.execute('INSERT INTO dice VALUES (?,?,?)', (filename, result, now))
-  db.commit()
+  query_db('INSERT INTO dice VALUES (?,?,?)', (filename, result, now))
 
 
 def create_db():
@@ -92,8 +89,10 @@ def init_db():
 
 
 def get_results():
-  rows = query_db('select * from dice')
-  results = [{'src': '{}{}'.format(IMAGE_ROUTE, r[0]), 'result': r[1]} for r in rows]
+  rows = query_db('select * from dice ORDER BY ts DESC')
+  results = [{'src': '{}{}'.format(IMAGE_ROUTE, r[0]),
+              'result': r[1],
+              'time': r[2]} for r in rows]
   return results
 
 
@@ -145,17 +144,27 @@ def classify_image(file):
   return result
 
 
-def clean_uploads():
-  uploads = os.listdir(app.config['UPLOAD_FOLDER'])
-  oldest = uploads[::-1][app.config['UPLOAD_LIMIT']:]
+def remove_old():
+  count = query_db('SELECT COUNT(*) FROM dice')[0][0]
+  remove_count = max(0, count - app.config['HISTORY_LIMIT'])
+  to_remove = query_db('SELECT rowid, filename FROM dice ORDER by ts ASC LIMIT (?)', (remove_count,))
 
-  for ul in oldest:
-    ul_full = os.path.join(app.config['UPLOAD_FOLDER'], ul)
+  # delete from database
+  delete_sql = 'DELETE FROM dice WHERE rowid IN ({})'.format(','.join('?' * remove_count))
+  remove_ids = [r[0] for r in to_remove]
+  query_db(delete_sql, remove_ids)
+
+  # delete image files
+  remove_filenames = [r[1] for r in to_remove]
+
+  for filename in remove_filenames:
+    path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     try:
-      os.remove(ul_full)
+      os.remove(path)
+    except FileNotFoundError as e:
+      print("file not found, couldn't delete")
     except OSError as e:
-      print("couldn't delete file {}".format(ul_full))
-      pass
+      print("couldn't delete file {}".format(path))
 
 
 def cleanup():
@@ -190,9 +199,9 @@ def classify():
 
     if file and allowed_file(file.filename):
       saved_path = save_image(file)
-      clean_uploads()
       result = classify_image(file)
       db_insert_result(os.path.basename(saved_path), result)
+      remove_old()
       notify_clients()
 
       print('{} - {}'.format(result, time.asctime()))

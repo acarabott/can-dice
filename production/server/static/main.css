@@ -62,7 +62,7 @@ input {
   max-width: 20vw;
 }
 
-.diceroll:first-of-type {
+#container .diceroll:first-child {
   display: block;
   margin: 10px auto;
   max-width: 40vw;

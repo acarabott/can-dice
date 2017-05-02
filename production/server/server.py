@@ -8,7 +8,6 @@ from flask.json import dumps
 from flask_sockets import Sockets
 import gevent.wsgi
 from geventwebsocket.handler import WebSocketHandler
-from geventwebsocket.exceptions import WebSocketError
 import werkzeug.serving
 
 import atexit
@@ -47,7 +46,8 @@ clients = []
 def get_db():
   db = getattr(g, '_database', None)
   if db is None:
-    db = g._database = sqlite3.connect(app.config['DATABASE'])
+    db = g._database = sqlite3.connect(app.config['DATABASE'],
+                                       detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
   db.row_factory = sqlite3.Row
   return db
 
@@ -69,8 +69,18 @@ def db_insert_result(filename, result):
   print(filename, result)
   db = get_db()
   cursor = db.cursor()
-  cursor.execute('INSERT INTO dice VALUES (?,?)', (filename, result))
+  now = datetime.datetime.now()
+  cursor.execute('INSERT INTO dice VALUES (?,?,?)', (filename, result, now))
   db.commit()
+
+
+def create_db():
+  with app.app_context():
+    with open(DATABASE, 'wb') as db:
+      db = get_db()
+      db.execute('CREATE TABLE dice (filename text, result int, ts timestamp)')
+      db.commit()
+      db.close()
 
 
 def init_db():

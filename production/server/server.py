@@ -66,16 +66,16 @@ def query_db(query, args=(), one=False):
   return (rv[0] if rv else None) if one else rv
 
 
-def db_insert_result(filename, result):
+def db_insert_result(filename, value):
   now = datetime.datetime.now()
-  query_db('INSERT INTO dice VALUES (?,?,?)', (filename, result, now))
+  query_db('INSERT INTO dice VALUES (?,?,?)', (filename, value, now))
 
 
 def create_db():
   with app.app_context():
     with open(DATABASE, 'wb') as db:
       db = get_db()
-      db.execute('CREATE TABLE dice (filename text, result int, ts timestamp)')
+      db.execute('CREATE TABLE dice (filename text, value int, ts timestamp)')
       db.commit()
       db.close()
 
@@ -91,7 +91,7 @@ def init_db():
 def get_results():
   rows = query_db('select * from dice ORDER BY ts DESC')
   results = [{'src': '{}{}'.format(IMAGE_ROUTE, r[0]),
-              'result': r[1],
+              'value': r[1],
               'time': r[2]} for r in rows]
   return results
 
@@ -131,17 +131,17 @@ def save_image(file):
 
 def classify_image(file):
   cropped = dice_processing.crop_dice(file)
-  results = []
+  values = []
 
   for img in cropped:
     with io.BytesIO() as output:
        img.convert('RGB').save(output, 'JPEG')
        data = output.getvalue()
-       result = brain.classify(data)
-       results.append(str(result[0]))
+       value = brain.classify(data)
+       values.append(str(value[0]))
 
-  result = int(''.join(str(i) for i in results))
-  return result
+  value = int(''.join(str(i) for i in values))
+  return value
 
 
 def remove_old():
@@ -199,12 +199,12 @@ def classify():
 
     if file and allowed_file(file.filename):
       saved_path = save_image(file)
-      result = classify_image(file)
-      db_insert_result(os.path.basename(saved_path), result)
+      value = classify_image(file)
+      db_insert_result(os.path.basename(saved_path), value)
       remove_old()
       notify_clients()
 
-      return str(result)
+      return str(value)
 
   else:
     return "you need to POST a jpg to this url with file key 'img'"

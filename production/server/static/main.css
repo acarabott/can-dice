@@ -80,8 +80,12 @@ input {
   height: auto;
 }
 
-.diceroll .result {
+.diceroll .value {
   text-align: center;
+  font-size: 2em;
+}
+
+#container .diceroll:first-child .value {
   font-size: 4em;
 }
 
@@ -96,7 +100,7 @@ input {
     margin: 0;
   }
 
-  .diceroll .result {
+  .diceroll .value {
     font-size: 3em;
   }
 }

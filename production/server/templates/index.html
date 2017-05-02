@@ -14,4 +14,20 @@
   {% endfor %}
 
 </body>
+  <script>
+    const socket = new WebSocket(`ws://${location.host}/connect`);
+    socket.addEventListener('open', event => {
+      socket.send('connected');
+    });
+    socket.addEventListener('message', event => {
+      console.log('received msg');
+      console.log(event.data);
+    });
+
+    window.addEventListener('beforeunload', event => {
+      console.log('before unload');
+      socket.close();
+      event.preventDefault();
+    });
+  </script>
 </html>

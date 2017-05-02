@@ -3,6 +3,11 @@ from flask import request
 from flask import render_template
 from flask import send_from_directory
 from flask import g
+from flask_sockets import Sockets
+import gevent.wsgi
+from geventwebsocket.handler import WebSocketHandler
+from geventwebsocket.exceptions import WebSocketError
+import werkzeug.serving
 
 import atexit
 import datetime
@@ -29,8 +34,13 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['UPLOAD_LIMIT'] = UPLOAD_LIMIT
 app.config['DATABASE'] = DATABASE
 
+sockets = Sockets(app)
+
+clients = []
 
 # Database bizniz --------------------------------------------------------------
+
+
 def get_db():
   db = getattr(g, '_database', None)
   if db is None:
@@ -69,7 +79,29 @@ def init_db():
       db.cursor().executescript(f.read())
     db.commit()
 
-# Database bizniz --------------------------------------------------------------
+
+# Sockets ----------------------------------------------------------------------
+
+@sockets.route('/connect')
+def connect_socket(ws):
+  clients.append(ws)
+
+  try:
+    ws.send('connected')
+  except WebSocketError as e:
+    print('client already disconnected')
+
+  while not ws.closed:
+    ws.receive()
+
+  clients.remove(ws)
+
+
+def notify_clients():
+  for client in clients:
+    client.send('update!')
+
+# Image handling ---------------------------------------------------------------
 
 
 def allowed_file(filename):
@@ -111,6 +143,13 @@ def clean_uploads():
       pass
 
 
+def cleanup():
+  global brain
+  brain.exit()
+
+
+# Primary Routing --------------------------------------------------------------
+
 @app.route('/')
 def index():
   rows = query_db('select * from dice')
@@ -141,19 +180,22 @@ def classify():
       clean_uploads()
       result = classify_image(file)
       db_insert_result(os.path.basename(saved_path), result)
+      notify_clients()
+
       print('{} - {}'.format(result, time.asctime()))
       return str(result)
 
   else:
     return "you need to POST a jpg to this url with file key 'img'"
 
-
-def cleanup():
-  global brain
-  brain.exit()
+@werkzeug.serving.run_with_reloader
+def run_server():
+  app.debug = True
+  server = gevent.wsgi.WSGIServer(('0.0.0.0', 5000), app, handler_class=WebSocketHandler)
+  server.serve_forever()
 
 
 if __name__ == '__main__':
   atexit.register(cleanup)
   os.makedirs(UPLOAD_FOLDER, mode=0o755, exist_ok=True)
-  app.run(host='0.0.0.0', debug=True)
+  run_server()

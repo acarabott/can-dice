@@ -28,6 +28,7 @@
 
       [img, number].forEach(el => rollEl.appendChild(el));
 
+      rollEl.style.opacity = 0.0;
       return rollEl;
     }
 
@@ -40,7 +41,10 @@
 
       Promise.all(imgPromises).then(rolls => {
         Array.from(parent.children).forEach(c => c.remove());
-        rolls.forEach(roll => parent.appendChild(roll));
+        rolls.forEach(roll => {
+          parent.appendChild(roll);
+          requestAnimationFrame(() => roll.style.opacity = 1.0);
+        });
       });
     }
 

@@ -66,6 +66,7 @@ input {
   display: block;
   margin: 10px auto;
   max-width: 40vw;
+  transition: opacity 1.0s ease-in;
 }
 
 .diceroll {

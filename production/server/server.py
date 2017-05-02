@@ -18,21 +18,23 @@ import dice_processing
 UPLOAD_FOLDER = 'uploads'
 UPLOAD_LIMIT = 10
 ALLOWED_EXTENSIONS = set(['jpg', 'jpeg'])
-MODEL_PATH = './model.pb'
-LABELS_PATH = './labels.txt'
+MODEL_PATH = 'model.pb'
+LABELS_PATH = 'labels.txt'
 DATABASE = 'dice.db'
 
 brain = Brain(MODEL_PATH, LABELS_PATH)
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['UPLOAD_LIMIT'] = UPLOAD_LIMIT
+app.config['DATABASE'] = DATABASE
 
 
 # Database bizniz --------------------------------------------------------------
 def get_db():
   db = getattr(g, '_database', None)
   if db is None:
-    db = g._database = sqlite3.connect(DATABASE)
+    db = g._database = sqlite3.connect(app.config['DATABASE'])
   db.row_factory = sqlite3.Row
   return db
 
@@ -98,7 +100,7 @@ def classify_image(file):
 
 def clean_uploads():
   uploads = os.listdir(app.config['UPLOAD_FOLDER'])
-  oldest = uploads[::-1][UPLOAD_LIMIT:]
+  oldest = uploads[::-1][app.config['UPLOAD_LIMIT']:]
 
   for ul in oldest:
     ul_full = os.path.join(app.config['UPLOAD_FOLDER'], ul)

@@ -9,32 +9,31 @@
   <div id="container"></div>
 </body>
   <script>
-    function render(results) {
-      const container = document.getElementById('container');
-      results.forEach(result => {
-        const imgEl = document.createElement('img');
-        imgEl.src = result['src'];
+    function renderResult(result, parent) {
+      const img = new Image();
+      img.src = result['src'];
 
-        const resultEl = document.createElement('div');
-        resultEl.classList.add('result');
-        resultEl.textContent = result['result'];
+      const number = document.createElement('div');
+      number.classList.add('result');
+      number.textContent = result['result'];
 
-        const rollEl = document.createElement('div');
-        rollEl.classList.add('diceroll');
+      const rollEl = document.createElement('div');
+      rollEl.classList.add('diceroll');
 
-        [imgEl, resultEl].forEach(el => rollEl.appendChild(el));
+      [img, number].forEach(el => rollEl.appendChild(el));
 
-        container.appendChild(rollEl);
+      img.addEventListener('load', event => {
+        parent.insertBefore(rollEl, parent.firstChild);
       });
     }
 
-    function clear() {
-      const dicerolls = document.getElementsByClassName('diceroll');
-      Array.from(dicerolls).forEach(dr => dr.remove())
-    }
+
+
+
+    const container = document.getElementById('container');
 
     const results = {{ results|tojson|safe }};
-    render(results);
+    results.forEach(result => renderResult(result, container));
 
 
     const socket = new WebSocket(`ws://${location.host}/connect`);
@@ -42,8 +41,8 @@
       socket.send('connected');
     });
     socket.addEventListener('message', event => {
-      clear();
-      render(JSON.parse(event.data));
+      const results = JSON.parse(event.data);
+      renderResult(results[0], container);
     });
 
     window.addEventListener('beforeunload', event => {

@@ -204,7 +204,6 @@ def classify():
       remove_old()
       notify_clients()
 
-      print('{} - {}'.format(result, time.asctime()))
       return str(result)
 
   else:

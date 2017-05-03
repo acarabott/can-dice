@@ -1,7 +1,7 @@
 #include <Servo.h>
 
 const uint8_t servoPin = 3;
-const uint8_t shake_pos = 90;
+const uint8_t shake_pos = 80;
 
 Servo servo;
 

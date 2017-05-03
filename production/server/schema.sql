@@ -1,1 +1,1 @@
-CREATE TABLE dice (filename text, result int, ts timestamp);
+CREATE TABLE dice (filename text, result text, ts timestamp);

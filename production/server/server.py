@@ -75,7 +75,7 @@ def create_db():
   with app.app_context():
     with open(DATABASE, 'wb') as db:
       db = get_db()
-      db.execute('CREATE TABLE dice (filename text, value int, ts timestamp)')
+      db.execute('CREATE TABLE dice (filename text, value text, ts timestamp)')
       db.commit()
       db.close()
 
@@ -140,7 +140,7 @@ def classify_image(file):
        value = brain.classify(data)
        values.append(str(value[0]))
 
-  value = int(''.join(str(i) for i in values))
+  value = ''.join(str(i) for i in values)
   return value
 
 

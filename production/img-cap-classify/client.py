@@ -23,10 +23,21 @@ def capture_and_post_factory(cam, server_url):
   return capture_and_post
 
 
+def leds_factory(cam, on):
+  def action():
+    if on:
+      cam.leds_on()
+    else:
+      cam.leds_off()
+  return action
+
+
 def main(server_url):
   print("started camera client")
   with DiceCam(12, 13, 18) as cam, LSM9DS1(1, 0x6b) as accel:
     accel.add_stop_action('capture', capture_and_post_factory(cam, server_url))
+    # accel.add_start_action('ledon', leds_factory(cam, True))
+    # accel.add_stop_action('ledoff', leds_factory(cam, False))
     while True:
       time.sleep(0.05)
 

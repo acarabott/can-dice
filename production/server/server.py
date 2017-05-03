@@ -212,7 +212,7 @@ def classify():
 
 @werkzeug.serving.run_with_reloader
 def run_server():
-  app.debug = True
+  # app.debug = True
   server = gevent.wsgi.WSGIServer(('0.0.0.0', 5000), app, handler_class=WebSocketHandler)
   server.serve_forever()
 

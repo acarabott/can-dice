@@ -28,8 +28,9 @@ class LSM9DS1(object):
     self.prev_z = 0.0
     self.curr_d = 0.0
     self.prev_d = 0.0
-    self.slow = 0.3
-    self.thresh = 0.05
+    self.slow = 0.5
+    self.thresh_start = 0.1
+    self.thresh_stop = 0.0005
     self.prev_moving = False
     self.curr_moving = False
     self.running = threading.Event()
@@ -117,16 +118,18 @@ class LSM9DS1(object):
       self.curr_z = self.get_z()
 
       # calculate the amount of change
-      dx = (self.curr_x - self.prev_x) ** 2
-      dy = (self.curr_y - self.prev_y) ** 2
-      dz = (self.curr_z - self.prev_z) ** 2
+      dx = abs(self.curr_x - self.prev_x)
+      dy = abs(self.curr_y - self.prev_y)
+      dz = abs(self.curr_z - self.prev_z)
 
-      # get total change, filtered
+      # get total change
       self.curr_d = dx + dy + dz
+      # filter total change
       self.curr_d = (self.curr_d * self.slow) + (self.prev_d * (1.0 - self.slow))
 
       # decide if moving
-      self.curr_moving = self.curr_d > self.thresh
+      thresh = self.thresh_stop if self.curr_moving else self.thresh_start
+      self.curr_moving = self.curr_d > thresh
 
       if self.curr_moving and not self.prev_moving:
         for k, func in self.start_actions.items():

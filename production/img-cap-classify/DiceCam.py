@@ -20,6 +20,7 @@ class DiceCam(object):
     self.camera.meter_mode = 'spot'
     self.camera.shutter_speed = 25000
     self.camera.color_effects = (128, 128)
+    self.camera.led = False
 
     self.setup()
 

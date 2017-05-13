@@ -155,7 +155,7 @@ def draw_files(img, files, dice_shape):
   return img
 
 
-cv2.namedWindow('labeller', cv2.WINDOW_OPENGL | cv2.WINDOW_AUTOSIZE)
+cv2.namedWindow('Dice Labeller', cv2.WINDOW_OPENGL | cv2.WINDOW_AUTOSIZE)
 running = True
 escape = 27
 
@@ -219,7 +219,7 @@ while running:
   img = add_text(img, stats)
 
   # render
-  cv2.imshow('labeller', img)
+  cv2.imshow('Dice Labeller', img)
 
   # input handling
   if key == ord('1') or key == ord('q'):

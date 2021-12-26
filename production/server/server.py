@@ -19,7 +19,8 @@ import sqlite3
 from Brain import Brain
 import dice_processing
 
-
+DEBUG = True
+DEBUG_FOLDER = 'debug'
 UPLOAD_FOLDER = 'uploads'
 HISTORY_LIMIT = 10
 ALLOWED_EXTENSIONS = set(['jpg', 'jpeg'])
@@ -32,6 +33,7 @@ brain = Brain(MODEL_PATH, LABELS_PATH)
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['DEBUG_FOLDER'] = DEBUG_FOLDER
 app.config['HISTORY_LIMIT'] = HISTORY_LIMIT
 app.config['DATABASE'] = DATABASE
 
@@ -133,10 +135,15 @@ def classify_image(file):
   cropped = dice_processing.crop_dice(file)
   values = []
 
-  for img in cropped:
+  for i, img in enumerate(cropped):
     with io.BytesIO() as output:
        img.convert('RGB').save(output, 'JPEG')
+       if DEBUG:
+         debug_path = os.path.join(app.config['DEBUG_FOLDER'], '{}.jpg'.format(i))
+         img.save(debug_path, 'JPEG')
+
        data = output.getvalue()
+
        value = brain.classify(data)
        values.append(str(value[0]))
 
